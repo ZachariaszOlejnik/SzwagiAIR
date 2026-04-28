@@ -1,0 +1,21 @@
+# Baza danych i sekrety
+*.log
+.env
+.env.local
+
+# Python / FastAPI (Backend)
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Node.js / React (Frontend)
+node_modules/
+dist/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Systemowe (Windows / Mac)
+.DS_Store
+Thumbs.db
