@@ -26,6 +26,26 @@ class Loty(Base):
     # relacje:
 
     id_samolotu: Mapped[int] = mapped_column(ForeignKey("samoloty.id"))
+    id_lotniska_wylotu: Mapped[int]= mapped_column(ForeignKey("lotniska.id"))
+    id_lotniska_przylotu: Mapped[int] = mapped_column(ForeignKey("lotniska.id"))
+
+    # relacje dla zapytań ORM:
+
+    samolot: Mapped["Samolot"] = relationship()
+
+    #dla rozróżnienia lotnisk:
+
+    lotnisko_wylotu: Mapped["Lotnisko"] = relationship(foreign_keys=[id_lotniska_wylotu])
+    lotnisko_przylotu: Mapped["Lotnisko"] = relationship(foreign_keys=[id_lotniska_przylotu])
+
+    #reszta relacji:
+
+    czas_wylotu: Mapped[datetime.datetime] = mapped_column(DateTime)
+    czas_przylotu: Mapped[datetime.datetime] = mapped_column(DateTime)
+    cena_bazowa: Mapped[float] = mapped_column(Numeric(10, 2))
+    wolne_miejsca: Mapped[int] = mapped_column(Integer)
+
+
 
 
     # dokończ resztę relacji
