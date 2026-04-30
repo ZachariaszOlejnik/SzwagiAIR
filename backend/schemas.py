@@ -94,3 +94,7 @@ class HarmonogramZalogiCreate(HarmonogramZalogiBase):
 class HarmonogramZalogiResponse(HarmonogramZalogiBase):
     id: int
     model_config = ConfigDict(from_attributes=True)
+
+#################################
+## 6. Dopisz resztę #############
+#################################
