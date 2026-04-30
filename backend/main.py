@@ -31,4 +31,11 @@ def dodaj_lotnisko(kod: str, miasto: str, kraj: str, db: Session = Depends(get_s
 
 # dodać endpointy dla samolotów oraz lotów
 
-# start serwera: uvicorn main:app --reload
+# start serwera:
+# cd .\backend\
+# docker compose up -d 
+#  uvicorn main:app --reload
+
+#stop serwera:
+# ctrl + c
+# docker compose down
