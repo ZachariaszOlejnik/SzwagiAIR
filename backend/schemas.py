@@ -113,7 +113,7 @@ class PasazerResponse(PasazerBase):
     model_config = ConfigDict(from_attributes=True)
 
 #################################
-## 7. Konto Użytkownika #########
+## 7. Konto Użytkownika ########
 #################################
 class KontoUzytkownikaBase(BaseModel):
     id_pasazera: int
