@@ -36,7 +36,7 @@ class LotniskoResponse(Lotnisko):
 #################################
 class SamolotBase(BaseModel):
     model: str = Field(..., max_length=50)
-    pojemnnosc_max: int = Field(..., gt=0, description= "Maksymalna liczba pasażerów ma by większa od 0")
+    pojemnosc_max: int = Field(..., gt=0, description= "Maksymalna liczba pasażerów ma by większa od 0")
 
 class SamolotCreate(SamolotBase):
     pass
@@ -49,9 +49,9 @@ class SamolotResponse(SamolotBase):
 ## 3. Lot #######################
 #################################
 class LotBase(BaseModel):
-    numer_Lotu: str = Field(..., max_length=10)
+    numer_lotu: str = Field(..., max_length=10)
     id_samolotu: int
-    id_lotniska_wykolotu: int
+    id_lotniska_wylotu: int
     id_lotniska_przylotu: int
     czas_wylotu: datetime
     czas_przylotu: datetime
