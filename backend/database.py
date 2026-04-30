@@ -1,4 +1,3 @@
-
 # źródło: https://medium.com/codex/fastapi-crud-with-postgresql-using-sqlalchemy-and-alembic-fa9418fead71
 
 from sqlalchemy import create_engine
