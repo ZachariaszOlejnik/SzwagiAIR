@@ -2,6 +2,7 @@ from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
 from database import engine, get_session, Base
 import models
+import schemas
 from datetime import datetime
 
 
@@ -29,7 +30,38 @@ def dodaj_lotnisko(kod: str, miasto: str, kraj: str, db: Session = Depends(get_s
     return {"status": "Sukces!", "dodano": nowe_lotnisko}
 
 
-# dodać endpointy dla samolotów oraz lotów
+# endpoint dla samolotów:
+
+@app.get("/samoloty")
+def pobierz_samoloty(db: Session = Depends(get_session)):
+    """Pobiera listę wszystkich samolotów."""
+    return db.query(models.Samolot).all()
+
+@app.post("/samoloty")
+def dodaj_samolot(samolot: schemas.SamolotCreate, db: Session = Depends(get_session)):
+    """Dodaje nowy samolot do floty."""
+    nowy_samolot = models.Samolot(**samolot.model_dump())
+    db.add(nowy_samolot)
+    db.commit()
+    db.refresh(nowy_samolot)
+    return nowy_samolot
+
+# endpoint dla lotów:
+
+@app.get("/loty")
+def pobierz_loty(db: Session = Depends(get_session)):
+    """Pobiera listę wszystkich zaplanowanych lotów."""
+    return db.query(models.Loty).all()
+
+@app.post("/loty")
+def dodaj_lot(lot: schemas.LotCreate, db: Session = Depends(get_session)):
+    """Tworzy nowy lot (wymaga podania istniejących ID samolotu i lotnisk)."""
+    nowy_lot = models.Loty(**lot.model_dump())
+    db.add(nowy_lot)
+    db.commit()
+    db.refresh(nowy_lot)
+    return nowy_lot
+
 
 # start serwera:
 # cd .\backend\
