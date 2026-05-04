@@ -13,13 +13,15 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="SzwagiAIR API")
 
-# endpoint do pobierania listy lotnisk:
+# ==========================================
+# MODUŁ OPERACYJNY
+# ==========================================
+
+# --- LOTNISKA ---
 @app.get("/lotniska")
 def pobierz_lotniska(db: Session = Depends(get_session)):
     """Zwraca listę wszystkich lotnisk w bazie."""
     return db.query(models.Lotnisko).all()
-
-# endpoint do dodawania nowego lotniska:
 
 @app.post("/lotniska")
 def dodaj_lotnisko(kod: str, miasto: str, kraj: str, db: Session = Depends(get_session)):
@@ -29,9 +31,7 @@ def dodaj_lotnisko(kod: str, miasto: str, kraj: str, db: Session = Depends(get_s
     db.refresh(nowe_lotnisko) # Pobiera ID nadane przez bazę
     return {"status": "Sukces!", "dodano": nowe_lotnisko}
 
-
-# endpoint dla samolotów:
-
+# --- SAMOLOTY ---
 @app.get("/samoloty")
 def pobierz_samoloty(db: Session = Depends(get_session)):
     """Pobiera listę wszystkich samolotów."""
@@ -46,8 +46,7 @@ def dodaj_samolot(samolot: schemas.SamolotCreate, db: Session = Depends(get_sess
     db.refresh(nowy_samolot)
     return nowy_samolot
 
-# endpoint dla lotów:
-
+# --- LOTY ---
 @app.get("/loty")
 def pobierz_loty(db: Session = Depends(get_session)):
     """Pobiera listę wszystkich zaplanowanych lotów."""
@@ -61,6 +60,66 @@ def dodaj_lot(lot: schemas.LotCreate, db: Session = Depends(get_session)):
     db.commit()
     db.refresh(nowy_lot)
     return nowy_lot
+
+# ==========================================
+# MODUŁ SPRZEDAŻOWY
+# ==========================================
+
+# --- PASAŻEROWIE ---
+@app.get("/pasazerowie")
+def pobierz_pasazerow(db: Session = Depends(get_session)):
+    return db.query(models.Pasazer).all()
+
+@app.post("/pasazerowie")
+def dodaj_pasazera(pasazer: schemas.PasazerCreate, db: Session = Depends(get_session)):
+    nowy_pasazer = models.Pasazer(**pasazer.model_dump())
+    db.add(nowy_pasazer)
+    db.commit()
+    db.refresh(nowy_pasazer)
+    return nowy_pasazer
+
+# --- REZERWACJE ---
+@app.get("/rezerwacje")
+def pobierz_rezerwacje(db: Session = Depends(get_session)):
+    return db.query(models.Rezerwacja).all()
+
+@app.post("/rezerwacje")
+def utworz_rezerwacje(rezerwacja: schemas.RezerwacjaCreate, db: Session = Depends(get_session)):
+    # Zabezpieczenie: Sprawdź czy pasażer z takim ID w ogóle istnieje
+    pasazer_istnieje = db.query(models.Pasazer).filter(models.Pasazer.id == rezerwacja.id_pasazera).first()
+    if not pasazer_istnieje:
+        raise HTTPException(status_code=404, detail="Pasażer o podanym ID nie istnieje!")
+        
+    nowa_rezerwacja = models.Rezerwacja(**rezerwacja.model_dump())
+    db.add(nowa_rezerwacja)
+    db.commit()
+    db.refresh(nowa_rezerwacja)
+    return nowa_rezerwacja
+
+# --- ODCINKI REZERWACJI ---
+@app.post("/odcinki-rezerwacji")
+def dodaj_lot_do_rezerwacji(odcinek: schemas.OdcinekRezerwacjiCreate, db: Session = Depends(get_session)):
+    nowy_odcinek = models.OdcinekRezerwacji(**odcinek.model_dump())
+    db.add(nowy_odcinek)
+    db.commit()
+    db.refresh(nowy_odcinek)
+    return nowy_odcinek
+
+# --- PŁATNOŚCI ---
+@app.post("/platnosci")
+def zarejestruj_platnosc(platnosc: schemas.PlatnoscCreate, db: Session = Depends(get_session)):
+    nowa_platnosc = models.Platnosc(**platnosc.model_dump())
+    db.add(nowa_platnosc)
+    
+    # Logika biznesowa: jeśli płatność zakończona, zaktualizuj status rezerwacji
+    if nowa_platnosc.status_transakcji == "zakonczona":
+        rezerwacja = db.query(models.Rezerwacja).filter(models.Rezerwacja.id == platnosc.id_rezerwacji).first()
+        if rezerwacja:
+            rezerwacja.status = "oplacona"
+            
+    db.commit()
+    db.refresh(nowa_platnosc)
+    return nowa_platnosc
 
 
 # start serwera:
