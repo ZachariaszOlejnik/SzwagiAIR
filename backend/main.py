@@ -1,9 +1,48 @@
 from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
+from backend.routers import operacje
 from database import engine, get_session, Base
 import models
 import schemas
 from datetime import datetime
+
+
+############################
+#  --  WAŻNE - początek: ---
+# po przeniesiu endpointów do routers odkomentować:
+############################
+
+# from fastapi import FastAPI
+# from database import engine, Base
+# froom routers import operacje 
+
+
+
+# Automatyczne tworzenie tabel w bazie Postgres przy starcie aplikacji
+# sprawdzenie pliku models.py i tworzenie tabel, jeśli jeszcze nie istnieją
+
+# Base.metadata.create_all(bind=engine)
+
+# app = FastAPI(
+#     title="SzwagiAIR API",
+#     description="System zarządzania liniami lotniczymi SzwagiAIR"
+#     )
+
+# podpięcie routera z operacjami do main.py:
+
+# app.include_router(operacje.router) 
+
+
+# (...)
+
+############################
+#  ---  WAŻNE - koniec: ----
+############################
+
+
+
+
+
 
 
 # Automatyczne tworzenie tabel w bazie Postgres przy starcie aplikacji
