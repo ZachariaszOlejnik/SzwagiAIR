@@ -28,7 +28,7 @@ from datetime import datetime
 #     description="System zarządzania liniami lotniczymi SzwagiAIR"
 #     )
 
-# podpięcie routera z operacjami do main.py:
+# podpięcie routera z operacjami do main.py: (Moduł mój - Mateusz)
 
 # app.include_router(operacje.router) 
 
