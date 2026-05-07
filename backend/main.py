@@ -127,6 +127,8 @@ def zarejestruj_platnosc(platnosc: schemas.PlatnoscCreate, db: Session = Depends
 # docker compose up -d 
 #  uvicorn main:app --reload
 
+# adres: http://127.0.0.1:8000/docs
+
 #stop serwera:
 # ctrl + c
 # docker compose down
