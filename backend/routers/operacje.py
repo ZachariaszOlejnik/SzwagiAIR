@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 from database import get_session
 import models
 import schemas
@@ -99,3 +100,35 @@ def dodaj_wpis_harmonogramu(wpis: schemas.HarmonogramZalogiCreate, db: Session =
     db.commit()
     db.refresh(nowy_wpis)
     return nowy_wpis
+
+
+# --- RAPORTY (RAW SQL) ---
+# POMIĘTAĆ O WCIĘCIACH, BO NIE ZADZIAŁA!
+@router.get("/raporty/szczegoly-lotow")
+def raport_szczegolowy_lotow(db: Session = Depends(get_session)):
+    """Pobranie szczegółowego raportu lotów (RAW SQL)."""
+
+    zapytanie = text("""
+        SELECT
+            l.numer_lotu,
+            s.model AS model_samolotu,
+            wylot.miasto AS miasto_wylotu,
+            przylot.miasto AS miasto_przylotu,
+            l.czas_wylotu,
+            l.czas_przylotu,
+            l.wolne_miejsca
+        FROM loty l
+        JOIN samoloty s ON l.id_samolotu = s.id
+        JOIN lotniska wylot ON l.id_lotniska_wylotu = wylot.id
+        JOIN lotniska przylot ON l.id_lotniska_przylotu = przylot.id
+    """)
+
+# .mappings() - zamiana wyniku zapytania sql na słownik, który FastAPI może zwrócić jako JSON 
+    wyniki = db.execute(zapytanie).mappings().all()
+    return wyniki
+                
+# POMYSŁY:
+# - Statystyki lotnisk: Zlicza, ile lotów startuje z każdego lotniska
+# - Procentowe obłożenie: Oblicza, ile procent miejsc w samolocie zostało już wykupionych na dany lot, bazując na pojemnosc_max z tabeli samolotów i wolne_miejsca z tabeli lotów.
+
+
