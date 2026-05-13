@@ -19,9 +19,15 @@ app.include_router(operacje_router)
 app.include_router(sprzedaz_router)
  
  
+
+# AKTYWACJA ŚRODOWISKA WIRTUALNEGO:
+# .\szwagiAIR - lokalizacja projektu
+# .\venv\Scripts\activate
+
 # ==========================================
 # URUCHAMIANIE
 # ==========================================
+
 # start serwera:
 #   cd .\backend\
 #   docker compose up -d

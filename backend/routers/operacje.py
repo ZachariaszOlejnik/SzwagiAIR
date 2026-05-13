@@ -36,17 +36,66 @@ def dodaj_lotnisko(lotnisko: schemas.LotniskoCreate, db: Session = Depends(get_s
 
 
 # --- SAMOLOTY ---
+@router.get("/samoloty", response_model = list[schemas.SamolotResponse])
+def pobierz_samoloty(db: Session = Depends(get_session)):
+    """Zwraca listę wszystkich samolotów w bazie."""
+    return db.query(models.Samolot).all()
 
-# (...)
+@router.post("/samoloty", response_model=schemas.SamolotResponse)
+def dodaj_samolot(samolot: schemas.SamolotCreate, db: Session = Depends(get_session)):
+    """Dodaje nowy samolot do bazy danych."""
+    nowy_samolot = models.Samolot(**samolot.model_dump())
+    db.add(nowy_samolot)
+    db.commit()  
+    db.refresh(nowy_samolot) 
+
+    return nowy_samolot
+
 
 # --- LOTY ---
+@router.get("/loty", response_model = list[schemas.LotResponse])
+def pobierz_loty(db: Session = Depends(get_session)):
+    """Zwraca listę wszystkich lotów w bazie."""
+    return db.query(models.Loty).all()
 
-# (...)
+@router.post("/loty", response_model=schemas.LotResponse)
+def dodaj_lot(lot: schemas.LotCreate, db: Session = Depends(get_session)):
+    """Tworzy nowy lot w bazie danych. Podajemy ID samolotu, ID lotniska"""
+    nowy_lot = models.Loty(**lot.model_dump())
+    db.add(nowy_lot)
+    db.commit()  
+    db.refresh(nowy_lot) 
+
+    return nowy_lot
+
 
 # --- PRACOWNICY ---
+@router.get("/pracownicy", response_model = list[schemas.PracownikResponse])
+def pobierz_pracownikow(db: Session = Depends(get_session)):
+    """Zwraca listę wszystkich pracownków w bazie."""
+    return db.query(models.Pracownik).all()
 
-# (...)
+@router.post("/pracownicy", response_model=schemas.PracownikResponse)
+def dodaj_pracownika(pracownik: schemas.PracownikCreate, db: Session = Depends(get_session)):
+    """Dodaje nowego pracownika do bazy danych."""
+    nowy_pracownik = models.Pracownik(**pracownik.model_dump())
+    db.add(nowy_pracownik)
+    db.commit()
+    db.refresh(nowy_pracownik)
+    return nowy_pracownik
+
 
 # --- HARMONOGRAM ZAŁOGI ---
+@router.get("/harmonogram", response_model = list[schemas.HarmonogramZalogiResponse])
+def pobierz_harmonogram(db: Session = Depends(get_session)):
+    """Zwraca listę wszystkich wpisów w harmonogramie załogi."""
+    return db.query(models.HarmonogramZalogi).all()
 
-# (...)
+@router.post("/harmonogram", response_model=schemas.HarmonogramZalogiResponse)
+def dodaj_wpis_harmonogramu(wpis: schemas.HarmonogramZalogiCreate, db: Session = Depends(get_session)):
+    """Dodaje nowy wpis do harmonogramu załogi."""
+    nowy_wpis = models.HarmonogramZalogi(**wpis.model_dump())
+    db.add(nowy_wpis)
+    db.commit()
+    db.refresh(nowy_wpis)
+    return nowy_wpis
