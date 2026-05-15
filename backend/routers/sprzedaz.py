@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 from database import get_session
 import models
 import schemas
@@ -175,7 +176,6 @@ def zrealizuj_platnosc(platnosc: schemas.PlatnoscCreate, db: Session = Depends(g
         raise HTTPException(status_code=404, detail="Nie można opłacić nieistniejącej rezerwacji!")
  
     # 2. Logika biznesowa: Sprawdzamy, czy rezerwacja nie jest już opłacona lub anulowana
-    # UWAGA: używamy lowercase zgodnie ze schematem (Literal w schemas.py)
     if rezerwacja.status == "oplacona":
         raise HTTPException(status_code=400, detail="Ta rezerwacja została już opłacona!")
  
@@ -291,3 +291,40 @@ def dodaj_usluge_do_rezerwacji(usluga: schemas.UslugaRezerwacjiCreate, db: Sessi
     db.commit()
     db.refresh(nowa_usluga)
     return nowa_usluga
+
+# ==========================================
+# --- RAPORTY (RAW SQL) ---
+# ==========================================
+
+@router.get("/raporty/top-pasazerowie")
+def raport_top_pasazerowie(limit: int = 10, db: Session = Depends(get_session)):
+    """
+    Ranking pasażerów wg sumy wydatków na opłacone rezerwacje (RAW SQL).
+    Parametr 'limit' określa ile pozycji rankingu zwrócić (domyślnie 10).
+    """
+ 
+    zapytanie = text("""
+        SELECT
+            p.id AS id_pasazera,
+            p.imie,
+            p.nazwisko,
+            p.email,
+            COUNT(DISTINCT r.id) AS liczba_rezerwacji,
+            SUM(pl.kwota) AS suma_wydatkow
+        FROM pasazerowie p
+        JOIN rezerwacje r ON r.id_pasazera = p.id
+        JOIN platnosci pl ON pl.id_rezerwacji = r.id
+        WHERE pl.status_transakcji = 'zakonczona'
+        GROUP BY p.id, p.imie, p.nazwisko, p.email
+        ORDER BY suma_wydatkow DESC
+        LIMIT :limit
+    """)
+
+# Parametryzacja zabezpiecza przed SQL Injection (wymóg z dokumentacji projektowej)
+    wyniki = db.execute(zapytanie, {"limit": limit}).mappings().all()
+    return wyniki
+
+# POMYSŁY :
+# - Przychody miesięczne: SUM(kwota) GROUP BY DATE_TRUNC('month', data_platnosci)
+# - Popularne usługi: LEFT JOIN katalog_uslug + COUNT wykupień
+# - Statystyki anulacji: COUNT rezerwacji per status, procent anulacji
