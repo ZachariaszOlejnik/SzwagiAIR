@@ -24,10 +24,10 @@ app = FastAPI(
 # Konfiguracja CORS (Cross-Origin Resource Sharing)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=["*"],        # zezwalamy na każde źródło
+    allow_credentials=False,    # nie zezwalamy na przesyłanie ciasteczek (nie potrzebujemy tego w tym projekcie)
+    allow_methods=["*"],        # GET, POST, PUT, DELETE, ...
+    allow_headers=["*"],        # Content-Type, Authorization, ...
 )
 
 

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, Field
 from database import get_session
 import models
 
@@ -51,7 +51,7 @@ class RejestracjaRequest(BaseModel):
     # dane pasażera
     imie: str = Field(..., min_length=2, max_length=50)
     nazwisko: str = Field(..., min_length=2, max_length=50)
-    email: EmailStr = Field(..., max_length=100)
+    email: str = Field(..., max_length=100)
     telefon: str = Field(..., min_length=9, max_length=20)
     # dane konta logowania
     haslo: str = Field(..., min_length=6, max_length=100, description="Hasło musi mieć min. 6 znaków")
