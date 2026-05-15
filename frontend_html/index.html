@@ -62,6 +62,19 @@
         font-size: 14px;
         color: red;
       }
+      .link-rejestracja {
+        margin-top: 20px;
+        font-size: 14px;
+        color: #333;
+      }
+      .link-rejestracja a {
+        color: #003366;
+        font-weight: bold;
+        text-decoration: none;
+      }
+      .link-rejestracja a:hover {
+        text-decoration: underline;
+      }
     </style>
   </head>
   <body>
@@ -79,22 +92,26 @@
         <button type="submit">Zaloguj się i leć</button>
       </form>
       <div id="komunikat"></div>
+ 
+      <div class="link-rejestracja">
+        Nie masz konta? <a href="rejestracja.html">Zarejestruj się</a>
+      </div>
     </div>
-
+ 
     <script>
       // wysyłanie danych logowania do backendu i obsługa odpowiedzi
       document
         .getElementById("loginForm")
         .addEventListener("submit", async function (event) {
           event.preventDefault(); // zapobiega przeładowaniu strony
-
+ 
           const loginValue = document.getElementById("login").value;
           const hasloValue = document.getElementById("haslo").value;
           const komunikatDiv = document.getElementById("komunikat");
-
+ 
           komunikatDiv.style.color = "black";
           komunikatDiv.innerText = "Logowanie...";
-
+ 
           try {
             const response = await fetch(
               "http://127.0.0.1:8000/autoryzacja/login",
@@ -109,14 +126,20 @@
                 }),
               },
             );
-
+ 
             const data = await response.json();
-
+ 
             if (response.ok) {
               komunikatDiv.style.color = "green";
               komunikatDiv.innerText =
-                "Zalogowano pomyślnie! Witamy" + data.login;
-              // tutaj można przekierować użytkownika do innej strony lub wykonać inne akcje po udanym logowaniu
+                "Zalogowano pomyślnie! Witamy " + data.login;
+ 
+              // zapisujemy sesję w localStorage - inne strony moga sprawdzić czy ktoś jest zalogowany
+              localStorage.setItem("login", data.login);
+              localStorage.setItem("rola", data.rola);
+ 
+              // tutaj można przekierować użytkownika do innej strony np.:
+              // setTimeout(() => { window.location.href = "wyszukiwarka.html"; }, 1500);
             } else {
               komunikatDiv.style.color = "red";
               komunikatDiv.innerText = "Błąd: " + data.detail;
