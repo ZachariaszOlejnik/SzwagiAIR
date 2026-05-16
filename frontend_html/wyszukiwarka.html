@@ -131,19 +131,37 @@
             let znaleziono = 0;
 
             loty.forEach((lot) => {
-              wynikDiv.innerHTML += `
-                <div class = "lot-karta">
-                    <strong>Numer lotu: ${lot.numer_lotu || "Brak"} </strong></br>
-                    ID Lotniska Start: ${lot.id_lotniska_start || "---"}</br>
-                    ID Lotniska Cel: ${lot.id_lotniska_cel || "---"}</br>
-                    <small>Bramka (Gate): ${lot.gate || "TBA"}</small>
-                </div>
-                `;
-              znaleziono++;
+              // zamiana danych na tekst i porównanie z filtrem
+              const startBaza = String(lot.id_lotniska_start).toUpperCase();
+              const celBaza = String(lot.id_lotniska_cel).toUpperCase();
+
+              const pasujeSkad =
+                skadFiltr === "" || startBaza.includes(skadFiltr); // puste pola są ok
+              const pasujeDokad =
+                dokadFiltr === "" || celBaza.includes(dokadFiltr);
+
+              // gdy oba pasują:
+              if (pasujeSkad && pasujeDokad) {
+                wynikDiv.innerHTML += `
+                      <div class = "lot-karta">
+                          <strong>Numer lotu: ${lot.numer_lotu || "Brak"} </strong><br>
+                          ID Lotniska Start: ${lot.id_lotniska_start || "---"}<br>
+                          ID Lotniska Cel: ${lot.id_lotniska_cel || "---"}<br>
+                          <small>Bramka (Gate): ${lot.gate || "TBA"}</small>
+                      </div>
+                      `;
+                znaleziono++;
+              }
             });
+
+            // gdy nie znaleziono pasujących lotów
+            if (znaleziono === 0) {
+              wynikDiv.innerHTML =
+                '<p style="text-align:center;">Brak lotów dla podanych kryteriów.</p>';
+            }
           } catch (error) {
             wynikDiv.innerHTML =
-              '<p style="text-align:center; color:red;">Błąd połączenia z serwerem. Uvicorn działa?.</p>';
+              '<p style="text-align:center; color:red;">Błąd połączenia z serwerem. Uvicorn działa?</p>';
           }
         });
     </script>
