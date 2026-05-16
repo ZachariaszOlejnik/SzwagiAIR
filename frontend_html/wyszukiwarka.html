@@ -131,23 +131,29 @@
             let znaleziono = 0;
 
             loty.forEach((lot) => {
-              // zamiana danych na tekst i porównanie z filtrem
-              const startBaza = String(lot.id_lotniska_start).toUpperCase();
-              const celBaza = String(lot.id_lotniska_cel).toUpperCase();
+              //   // zamiana danych na tekst i porównanie z filtrem
+              //   const startBaza = String(lot.id_lotniska_start).toUpperCase();
+              //   const celBaza = String(lot.id_lotniska_cel).toUpperCase();
 
+              // 1. Zamiana danych na tekst
+              const numerLotu = String(lot.numer_lotu || "").toUpperCase();
+              const wylot = lot.id_lotniska_wylotu || "Brak";
+              const przylot = lot.id_lotniska_przylotu || "Brak";
+
+              // 2. Sprawdzenie, czy pasuje do filtrów
               const pasujeSkad =
-                skadFiltr === "" || startBaza.includes(skadFiltr); // puste pola są ok
+                skadFiltr === "" || numerLotu.includes(skadFiltr); // puste pola są ok
               const pasujeDokad =
-                dokadFiltr === "" || celBaza.includes(dokadFiltr);
+                dokadFiltr === "" || numerLotu.includes(dokadFiltr);
 
-              // gdy oba pasują:
+              // 3.Gdy oba pasują:
               if (pasujeSkad && pasujeDokad) {
                 wynikDiv.innerHTML += `
                       <div class = "lot-karta">
                           <strong>Numer lotu: ${lot.numer_lotu || "Brak"} </strong><br>
-                          ID Lotniska Start: ${lot.id_lotniska_start || "---"}<br>
-                          ID Lotniska Cel: ${lot.id_lotniska_cel || "---"}<br>
-                          <small>Bramka (Gate): ${lot.gate || "TBA"}</small>
+                          ID Lotniska Start: ${wylot || "---"}<br>
+                          ID Lotniska Cel: ${przylot || "---"}<br>
+                          <small>Cena: ${lot.cena_bazowa} PLN | Wolne miejsca: ${lot.wolne_miejsca}</small>
                       </div>
                       `;
                 znaleziono++;
