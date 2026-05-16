@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SzwagiAIR - Wyszukaj lot</title>
+
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f7f6;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding-top: 50px;
+        margin: 0;
+      }
+      .search-container {
+        background-color: white;
+        padding: 40px;
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        width: 400px;
+        text-align: center;
+        margin-bottom: 20px;
+      }
+      .search-container h2 {
+        color: #003366;
+        margin-bottom: 20px;
+      }
+      .form-group {
+        margin-bottom: 15px;
+        text-align: left;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-size: 14px;
+        color: #333;
+      }
+      .form-group input {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-sizing: border-box;
+      }
+      button {
+        width: 100%;
+        padding: 10px;
+        background-color: #003366;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        font-size: 16px;
+        cursor: pointer;
+        margin-top: 10px;
+      }
+      button:hover {
+        background-color: #002244;
+      }
+      #wyniki {
+        width: 400px;
+      }
+      /* styl dla pojedynczego lotu */
+      .lot-karta {
+        background-color: white;
+        padding: 15px;
+        border-left: 5px solid #003366;
+        border-radius: 4px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 10px;
+        font-size: 14px;
+      }
+      .lot-karta strong {
+        color: #003366;
+        font-size: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="search-container">
+      <h2>Znajdź swój lot</h2>
+      <form id="searchForm">
+        <div class="form-group">
+          <label for="skad">Skąd (Kod lotniska, np. WAW)</label>
+          <input type="text" id="skad" placeholder="Opcjonalne..." />
+        </div>
+        <div class="from-group">
+          <label for="dokad">Dokąd (Kod lotniska, np. NYC)</label>
+          <input type="text" id="dokad" placeholder="Opcjonalnie..." />
+        </div>
+        <button type="submit">Szukaj lotów</button>
+      </form>
+    </div>
+
+    <div class="wyniki"></div>
+  </body>
+</html>
