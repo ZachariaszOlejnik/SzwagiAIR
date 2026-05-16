@@ -87,7 +87,7 @@
           <label for="skad">Skąd (Kod lotniska, np. WAW)</label>
           <input type="text" id="skad" placeholder="Opcjonalne..." />
         </div>
-        <div class="from-group">
+        <div class="form-group">
           <label for="dokad">Dokąd (Kod lotniska, np. NYC)</label>
           <input type="text" id="dokad" placeholder="Opcjonalnie..." />
         </div>
@@ -95,6 +95,57 @@
       </form>
     </div>
 
-    <div class="wyniki"></div>
+    <div id="wyniki"></div>
+
+    <script>
+      document
+        .getElementById("searchForm")
+        .addEventListener("submit", async function (event) {
+          event.preventDefault(); // zapobiega przeładowaniu
+
+          const wynikDiv = document.getElementById("wyniki");
+          wynikDiv.innerHTML =
+            '<p style="text-align:center;">Szukam najciekawszych kierunków...</p>';
+
+          try {
+            // endpoint pobierania lotów
+            const response = await fetch("http://127.0.0.1:8000/operacje/loty");
+            const loty = await response.json();
+
+            wynikDiv.innerHTML = "";
+
+            if (loty.length === 0) {
+              wynikDiv.innerHTML =
+                '<p style="text-align:center;">Niestety, nie znaleziono żadnych lotów w bazie.</p>';
+              return;
+            }
+
+            //
+            const skadFiltr = document
+              .getElementById("skad")
+              .value.toUpperCase();
+            const dokadFiltr = document
+              .getElementById("dokad")
+              .value.toUpperCase();
+
+            let znaleziono = 0;
+
+            loty.forEach((lot) => {
+              wynikDiv.innerHTML += `
+                <div class = "lot-karta">
+                    <strong>Numer lotu: ${lot.numer_lotu || "Brak"} </strong></br>
+                    ID Lotniska Start: ${lot.id_lotniska_start || "---"}</br>
+                    ID Lotniska Cel: ${lot.id_lotniska_cel || "---"}</br>
+                    <small>Bramka (Gate): ${lot.gate || "TBA"}</small>
+                </div>
+                `;
+              znaleziono++;
+            });
+          } catch (error) {
+            wynikDiv.innerHTML =
+              '<p style="text-align:center; color:red;">Błąd połączenia z serwerem. Uvicorn działa?.</p>';
+          }
+        });
+    </script>
   </body>
 </html>
