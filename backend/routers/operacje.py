@@ -102,8 +102,20 @@ def dodaj_wpis_harmonogramu(wpis: schemas.HarmonogramZalogiCreate, db: Session =
     return nowy_wpis
 
 
+
+
+
+
+####################################################
 # --- RAPORTY (RAW SQL) ---
+####################################################
+
 # POMIĘTAĆ O WCIĘCIACH, BO NIE ZADZIAŁA!
+
+
+
+### --- SZCZEGÓŁY LOTÓW (RAW SQL) --- ###
+
 @router.get("/raporty/szczegoly-lotow")
 def raport_szczegolowy_lotow(db: Session = Depends(get_session)):
     """Pobranie szczegółowego raportu lotów (RAW SQL)."""
@@ -126,7 +138,65 @@ def raport_szczegolowy_lotow(db: Session = Depends(get_session)):
 # .mappings() - zamiana wyniku zapytania sql na słownik, który FastAPI może zwrócić jako JSON 
     wyniki = db.execute(zapytanie).mappings().all()
     return wyniki
-                
+
+
+
+### --- PRZESIADKI (RAW SQL) --- ###
+@router.get("/loty/przesiadki")
+def szukaj_lotow_z_przesiadkami(skad:int, dokad:int, db: Session = Depends(get_session)):
+    """Zaawansowane wyszukiwanie lotów z przesiadkami"""
+
+    zapytanie = text("""
+    SELECT
+        l1.numer_lotu AS pierwszy_lot,
+        l1.id_lotniska_wylotu AS lotnisko_start,
+        l1.id_lotniska_przylotu AS lotnisko_przesiadki,
+        l2.numer_lotu AS drugi_lot,
+        l2.id_lotniska_przylotu AS lotnisko_cel,
+        l1.czas_wylotu AS czas_wylotu_pierwszego,
+        l2.czas_przylotu AS czas_przylotu_na_miejsce
+    FROM loty l1
+    JOIN loty l2 ON l1.id_lotniska_przylotu = l2.id_lotniska_wylotu
+    WHERE l1.id_lotniska_wylotu = :param_skad
+    AND l2.id_lotniska_przylotu = :param_dokad
+    AND l2.czas_wylotu > l1.czas_przylotu
+""")
+    
+    # .mappings():
+    # WAW-NYC-01", 1, 3, "NYC-LAX-02", 4 -----> {"pierwszy_lot": "WAW-NYC-01", "lotnisko_start": 1, ...}
+
+    wyniki = db.execute(zapytanie, {"param_skad":skad, "param_dokad":dokad}).mappings().all()
+    
+    # konwersja listy obiektów RowMapping na standardowe słowniki Pythona (dict) - był błąd
+    # return wyniki
+    return [dict(w) for w in wyniki]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # POMYSŁY:
 # - Statystyki lotnisk: Zlicza, ile lotów startuje z każdego lotniska
 # - Procentowe obłożenie: Oblicza, ile procent miejsc w samolocie zostało już wykupionych na dany lot, bazując na pojemnosc_max z tabeli samolotów i wolne_miejsca z tabeli lotów.
