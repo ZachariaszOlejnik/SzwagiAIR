@@ -176,27 +176,6 @@ def szukaj_lotow_z_przesiadkami(skad:int, dokad:int, db: Session = Depends(get_s
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 # POMYSŁY:
 # - Statystyki lotnisk: Zlicza, ile lotów startuje z każdego lotniska
 # - Procentowe obłożenie: Oblicza, ile procent miejsc w samolocie zostało już wykupionych na dany lot, bazując na pojemnosc_max z tabeli samolotów i wolne_miejsca z tabeli lotów.
