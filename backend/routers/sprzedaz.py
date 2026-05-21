@@ -324,7 +324,26 @@ def raport_top_pasazerowie(limit: int = 10, db: Session = Depends(get_session)):
     wyniki = db.execute(zapytanie, {"limit": limit}).mappings().all()
     return wyniki
 
-# POMYSŁY :
-# - Przychody miesięczne: SUM(kwota) GROUP BY DATE_TRUNC('month', data_platnosci)
-# - Popularne usługi: LEFT JOIN katalog_uslug + COUNT wykupień
-# - Statystyki anulacji: COUNT rezerwacji per status, procent anulacji
+@router.get("/raporty/przychody-miesieczne")
+def raport_przychody_miesieczne(rok: int = 2026, db: Session = Depends(get_session)):
+    """
+    Suma przychodów w podziale na miesiące dla wybranego roku.
+    Używa funkcji agregujących PostgreSQL: DATE_TRUNC + EXTRACT.
+    Parametr 'rok' - rok do analizy (domyślnie 2026).
+    """
+ 
+    zapytanie = text("""
+        SELECT
+            EXTRACT(MONTH FROM pl.data_platnosci) AS miesiac,
+            COUNT(pl.id) AS liczba_platnosci,
+            SUM(pl.kwota) AS suma_przychodow
+        FROM platnosci pl
+        WHERE pl.status_transakcji = 'zakonczona'
+          AND EXTRACT(YEAR FROM pl.data_platnosci) = :rok
+        GROUP BY EXTRACT(MONTH FROM pl.data_platnosci)
+        ORDER BY miesiac
+    """)
+ 
+    wyniki = db.execute(zapytanie, {"rok": rok}).mappings().all()
+    return wyniki
+

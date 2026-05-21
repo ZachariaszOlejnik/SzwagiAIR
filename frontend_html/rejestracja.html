@@ -3,210 +3,94 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SzwagiAIR - rejestracja</title>
+    <title>SzwagiAIR - Rezerwacja</title>
+ 
     <style>
       body {
-        font-family: Arial, sans-serif;
-        background-color: #f4f7f6;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 100vh;
-        margin: 0;
-        padding: 20px 0;
       }
-      .rejestracja-container {
-        background-color: white;
-        padding: 40px;
-        border-radius: 8px;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-        width: 350px;
-        text-align: center;
+ 
+      /* INFO O LOCIE */
+      .lot-info {
       }
-      .rejestracja-container h2 {
-        margin-bottom: 10px;
-        color: #003366;
+ 
+      .lot-info .trasa {
       }
-      .rejestracja-container .podtytul {
-        margin-bottom: 25px;
-        font-size: 14px;
-        color: #666;
+ 
+      /* DANE PASAŻERA */
+      .dane-pasazera {
       }
+ 
       .form-group {
-        margin-bottom: 15px;
-        text-align: left;
       }
+ 
       .form-group label {
-        display: block;
-        margin-bottom: 5px;
-        font-size: 14px;
-        color: #333;
       }
+ 
       .form-group input {
-        width: 100%;
-        padding: 10px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        box-sizing: border-box;
       }
-      .form-group .hint {
-        font-size: 12px;
-        color: #888;
-        margin-top: 3px;
+ 
+      /* BAGAŻ I USŁUGI */
+      .opcje {
       }
-      button {
-        width: 100%;
-        padding: 10px;
-        background-color: #003366;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        font-size: 16px;
-        cursor: pointer;
-        margin-top: 10px;
+ 
+      .opcja {
       }
-      button:hover {
-        background-color: #002244;
+ 
+      /* PODSUMOWANIE */
+      .podsumowanie {
       }
-      button:disabled {
-        background-color: #999;
-        cursor: not-allowed;
+ 
+      .btn-rezerwuj {
       }
-      #komunikat {
-        margin-top: 15px;
-        font-size: 14px;
-        color: red;
-      }
-      .link-logowanie {
-        margin-top: 20px;
-        font-size: 14px;
-        color: #333;
-      }
-      .link-logowanie a {
-        color: #003366;
-        font-weight: bold;
-        text-decoration: none;
-      }
-      .link-logowanie a:hover {
-        text-decoration: underline;
+ 
+      .btn-rezerwuj:hover {
       }
     </style>
   </head>
   <body>
-    <div class="rejestracja-container">
-      <h2>SzwagiAIR</h2>
-      <p class="podtytul">Załóż nowe konto i lataj z nami</p>
+    <a href="wyszukiwarka.html">← Wróć do wyszukiwarki</a>
+    <h2>✈️ Rezerwacja lotu</h2>
  
-      <form id="rejestracjaForm">
-        <div class="form-group">
-          <label for="imie">Imię:</label>
-          <input type="text" name="imie" id="imie" required minlength="2" maxlength="50" />
-        </div>
-        <div class="form-group">
-          <label for="nazwisko">Nazwisko:</label>
-          <input type="text" name="nazwisko" id="nazwisko" required minlength="2" maxlength="50" />
-        </div>
-        <div class="form-group">
-          <label for="email">E-mail (będzie loginem):</label>
-          <input type="email" name="email" id="email" required maxlength="100" />
-        </div>
-        <div class="form-group">
-          <label for="telefon">Telefon:</label>
-          <input type="tel" name="telefon" id="telefon" required minlength="9" maxlength="20" placeholder="+48 600 000 000" />
-        </div>
-        <div class="form-group">
-          <label for="haslo">Hasło:</label>
-          <input type="password" name="haslo" id="haslo" required minlength="6" />
-          <div class="hint">Minimum 6 znaków</div>
-        </div>
-        <div class="form-group">
-          <label for="haslo2">Powtórz hasło:</label>
-          <input type="password" name="haslo2" id="haslo2" required minlength="6" />
-        </div>
-        <button type="submit" id="submitBtn">Załóż konto</button>
-      </form>
-      <div id="komunikat"></div>
+    <!-- INFORMACJE O WYBRANYM LOCIE -->
+    <section class="lot-info" id="lotInfo">
+      <h3>Wybrany lot</h3>
+      <p>Ładowanie szczegółów lotu...</p>
+    </section>
  
-      <div class="link-logowanie">
-        Masz już konto? <a href="index.html">Zaloguj się</a>
+    <!-- DANE PASAŻERA -->
+    <section class="dane-pasazera">
+      <h3>Dane pasażera</h3>
+      <div class="form-group">
+        <label>Zalogowany jako:</label>
+        <input type="text" id="loginPasazera" readonly />
       </div>
-    </div>
+      <div class="form-group">
+        <label for="numerMiejsca">Numer miejsca:</label>
+        <input type="text" id="numerMiejsca" placeholder="np. 12A" />
+      </div>
+    </section>
  
-    <script>
-      // wysyłanie danych rejestracji do backendu i obsługa odpowiedzi
-      document
-        .getElementById("rejestracjaForm")
-        .addEventListener("submit", async function (event) {
-          event.preventDefault(); // zapobiega przeładowaniu strony
+    <!-- BAGAŻ -->
+    <section class="opcje">
+      <h3>Bagaż</h3>
+      <div class="opcja">
+        <input type="radio" name="bagaz" value="0" checked /> Podręczny (w cenie)
+      </div>
+      <div class="opcja">
+        <input type="radio" name="bagaz" value="150" /> Rejestrowany 20kg (+150 PLN)
+      </div>
+    </section>
  
-          // pobieramy wartości z formularza
-          const imie = document.getElementById("imie").value.trim();
-          const nazwisko = document.getElementById("nazwisko").value.trim();
-          const email = document.getElementById("email").value.trim();
-          const telefon = document.getElementById("telefon").value.trim();
-          const haslo = document.getElementById("haslo").value;
-          const haslo2 = document.getElementById("haslo2").value;
+    <!-- USŁUGI DODATKOWE -->
+    <section class="opcje">
+      <h3>Usługi dodatkowe</h3>
+      <div id="uslugiLista">Ładowanie usług...</div>
+    </section>
  
-          const komunikatDiv = document.getElementById("komunikat");
-          const submitBtn = document.getElementById("submitBtn");
- 
-          // walidacja po stronie frontu - dwa hasła muszą się zgadzać
-          if (haslo !== haslo2) {
-            komunikatDiv.style.color = "red";
-            komunikatDiv.innerText = "Hasła nie są takie same!";
-            return;
-          }
- 
-          // blokujemy przycisk żeby nie wysłać dwa razy
-          submitBtn.disabled = true;
-          komunikatDiv.style.color = "black";
-          komunikatDiv.innerText = "Tworzenie konta...";
- 
-          try {
-            const response = await fetch(
-              "http://127.0.0.1:8000/autoryzacja/rejestracja",
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                  imie: imie,
-                  nazwisko: nazwisko,
-                  email: email,
-                  telefon: telefon,
-                  haslo: haslo,
-                }),
-              },
-            );
- 
-            const data = await response.json();
- 
-            if (response.ok) {
-              komunikatDiv.style.color = "green";
-              komunikatDiv.innerText = "Konto utworzone! Za chwilę przekierujemy do logowania...";
- 
-              // przekierowanie po 2 sekundach na stronę logowania
-              setTimeout(() => {
-                window.location.href = "index.html";
-              }, 2000);
-            } else {
-              komunikatDiv.style.color = "red";
-              // FastAPI zwraca błędy walidacji Pydantic jako tablicę, więc obsługujemy oba przypadki
-              if (Array.isArray(data.detail)) {
-                komunikatDiv.innerText = "Błąd: " + data.detail[0].msg;
-              } else {
-                komunikatDiv.innerText = "Błąd: " + data.detail;
-              }
-              submitBtn.disabled = false;
-            }
-          } catch (error) {
-            komunikatDiv.style.color = "red";
-            komunikatDiv.innerText =
-              "Błąd połączenia z serwerem. Czy FastAPI działa?";
-            submitBtn.disabled = false;
-          }
-        });
-    </script>
-  </body>
-</html>
+    <!-- PODSUMOWANIE -->
+    <section class="podsumowanie">
+      <h3>Podsumowanie</h3>
+      <p>Razem: <span id="cenaRazem">0 PLN</span></p>
+      <button class="btn-rezerwuj" id="rezerwujBtn">Rezerwuj</button>
+      <div id="komunikat"></div>
+    </section>

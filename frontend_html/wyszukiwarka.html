@@ -150,10 +150,21 @@
               if (pasujeSkad && pasujeDokad) {
                 wynikDiv.innerHTML += `
                       <div class = "lot-karta">
-                          <strong>Numer lotu: ${lot.numer_lotu || "Brak"} </strong><br>
-                          ID Lotniska Start: ${wylot || "---"}<br>
-                          ID Lotniska Cel: ${przylot || "---"}<br>
-                          <small>Cena: ${lot.cena_bazowa} PLN | Wolne miejsca: ${lot.wolne_miejsca}</small>
+                          <strong>Lot ${lot.numer_lotu}</strong>
+                          <div class="trasa">
+                            ${wylot.kod} (${wylot.miasto}) → ${przylot.kod} (${przylot.miasto})
+                          </div>
+                          <div class="czasy">
+                            Wylot: ${wylotData}<br>
+                            Przylot: ${przylotData}
+                          </div>
+                          <div class="cena">Cena: ${lot.cena_bazowa} PLN</div>
+                          <small>Wolne miejsca: ${lot.wolne_miejsca}</small>
+                          <br>
+                          <button onclick="wybierzLot(${lot.id})"
+                              style="margin-top:10px; background-color:#e67e22;">
+                            Wybierz ten lot →
+                          </button>
                       </div>
                       `;
                 znaleziono++;
@@ -170,6 +181,18 @@
               '<p style="text-align:center; color:red;">Błąd połączenia z serwerem. Uvicorn działa?</p>';
           }
         });
+        
+        function wybierzLot(idLotu) {
+        // sprawdzamy czy zalogowany - bez tego nie ma rezerwacji
+        const login = localStorage.getItem("login");
+        if (!login) {
+          alert("Musisz się zalogować, aby zarezerwować lot!");
+          window.location.href = "index.html";
+          return;
+        }
+        // przekierowanie do rezerwacji z ID lotu w URL
+        window.location.href = `rezerwacja.html?lot_id=${idLotu}`;
+      }
     </script>
   </body>
 </html>

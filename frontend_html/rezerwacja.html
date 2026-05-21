@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SzwagiAIR - Rezerwacja</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f7f6;
+        margin: 0;
+        padding: 30px 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .container {
+        width: 600px;
+        max-width: 90%;
+      }
+      h2 {
+        color: #003366;
+        text-align: center;
+      }
+      .karta {
+        background-color: white;
+        padding: 25px;
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+      }
+      .karta h3 {
+        color: #003366;
+        margin-top: 0;
+        border-bottom: 2px solid #f4f7f6;
+        padding-bottom: 10px;
+      }
+      /* nagłówek lotu */
+      .lot-info .trasa {
+        font-size: 22px;
+        font-weight: bold;
+        color: #003366;
+        margin: 5px 0;
+      }
+      .lot-info .szczegoly {
+        color: #555;
+        font-size: 14px;
+        line-height: 1.6;
+      }
+      /* formularz danych pasażera */
+      .form-group {
+        margin-bottom: 12px;
+      }
+      .form-group label {
+        display: block;
+        margin-bottom: 4px;
+        font-size: 14px;
+        color: #333;
+      }
+      .form-group input {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-sizing: border-box;
+      }
+      .form-group input:read-only {
+        background-color: #f0f0f0;
+        color: #666;
+      }
+      /* opcje (bagaż, usługi) */
+      .opcja {
+        display: flex;
+        align-items: center;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        margin-bottom: 8px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+      .opcja:hover {
+        background-color: #f9f9f9;
+      }
+      .opcja input {
+        margin-right: 12px;
+        width: 18px;
+        height: 18px;
+      }
+      .opcja .nazwa {
+        flex: 1;
+        font-size: 14px;
+      }
+      .opcja .cena {
+        font-weight: bold;
+        color: #007e3a;
+      }
+      /* podsumowanie */
+      .podsumowanie {
+        background-color: #003366;
+        color: white;
+      }
+      .podsumowanie h3 {
+        color: white;
+        border-bottom-color: rgba(255, 255, 255, 0.2);
+      }
+      .podsumowanie .linia {
+        display: flex;
+        justify-content: space-between;
+        padding: 6px 0;
+        font-size: 14px;
+      }
+      .podsumowanie .razem {
+        font-size: 22px;
+        font-weight: bold;
+        border-top: 2px solid rgba(255, 255, 255, 0.3);
+        margin-top: 10px;
+        padding-top: 12px;
+      }
+      button {
+        width: 100%;
+        padding: 14px;
+        background-color: #e67e22;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        margin-top: 15px;
+      }
+      button:hover {
+        background-color: #d35400;
+      }
+      button:disabled {
+        background-color: #999;
+        cursor: not-allowed;
+      }
+      #komunikat {
+        margin-top: 15px;
+        font-size: 14px;
+        text-align: center;
+      }
+      .powrot {
+        display: inline-block;
+        margin-bottom: 15px;
+        color: #003366;
+        text-decoration: none;
+        font-size: 14px;
+      }
+      .powrot:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <a href="wyszukiwarka.html" class="powrot">← Wróć do wyszukiwarki</a>
+      <h2>Rezerwacja lotu</h2>
+ 
+      <!-- INFORMACJE O LOCIE -->
+      <div class="karta lot-info" id="lotInfo">
+        <h3>Wybrany lot</h3>
+        <p>Ładowanie szczegółów lotu...</p>
+      </div>
+ 
+      <!-- DANE PASAŻERA -->
+      <div class="karta">
+        <h3>Dane pasażera</h3>
+        <div class="form-group">
+          <label>Zalogowany jako:</label>
+          <input type="text" id="loginPasazera" readonly />
+        </div>
+        <div class="form-group">
+          <label for="numerMiejsca">Numer miejsca (np. 12A):</label>
+          <input type="text" id="numerMiejsca" placeholder="12A" maxlength="5" required />
+        </div>
+      </div>
+ 
+      <!-- BAGAŻ -->
+      <div class="karta">
+        <h3>Bagaż</h3>
+        <div class="opcja">
+          <input type="radio" name="bagaz" value="0" data-typ="podreczny" checked />
+          <span class="nazwa">Bagaż podręczny (w cenie)</span>
+          <span class="cena">0 PLN</span>
+        </div>
+        <div class="opcja">
+          <input type="radio" name="bagaz" value="150" data-typ="rejestrowany" />
+          <span class="nazwa">Bagaż rejestrowany 20kg</span>
+          <span class="cena">+150 PLN</span>
+        </div>
+        <div class="opcja">
+          <input type="radio" name="bagaz" value="250" data-typ="rejestrowany" />
+          <span class="nazwa">Bagaż rejestrowany 32kg</span>
+          <span class="cena">+250 PLN</span>
+        </div>
+      </div>
+ 
+      <!-- USŁUGI DODATKOWE (z katalogu) -->
+      <div class="karta">
+        <h3>Usługi dodatkowe</h3>
+        <div id="uslugiLista">Ładowanie usług...</div>
+      </div>
+ 
+      <!-- PODSUMOWANIE -->
+      <div class="karta podsumowanie">
+        <h3>Podsumowanie</h3>
+        <div class="linia">
+          <span>Cena biletu</span>
+          <span id="cenaBiletu">0 PLN</span>
+        </div>
+        <div class="linia">
+          <span>Bagaż</span>
+          <span id="cenaBagazu">0 PLN</span>
+        </div>
+        <div class="linia">
+          <span>Usługi dodatkowe</span>
+          <span id="cenaUslug">0 PLN</span>
+        </div>
+        <div class="linia razem">
+          <span>RAZEM</span>
+          <span id="cenaRazem">0 PLN</span>
+        </div>
+        <button id="rezerwujBtn">Rezerwuj i przejdź do płatności</button>
+        <div id="komunikat"></div>
+      </div>
+    </div>
