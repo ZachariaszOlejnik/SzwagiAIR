@@ -170,7 +170,7 @@ def szukaj_lotow_z_przesiadkami(skad:str, dokad:str, db: Session = Depends(get_s
     # .mappings():
     # WAW-NYC-01", 1, 3, "NYC-LAX-02", 4 -----> {"pierwszy_lot": "WAW-NYC-01", "lotnisko_start": 1, ...}
 
-    wyniki = db.execute(zapytanie, {"param_skad":skad.upper, "param_dokad":dokad.upper}).mappings().all()
+    wyniki = db.execute(zapytanie, {"param_skad":skad.upper(), "param_dokad":dokad.upper()}).mappings().all()
     
     # konwersja listy obiektów RowMapping na standardowe słowniki Pythona (dict) - był błąd
     # return wyniki

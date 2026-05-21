@@ -119,7 +119,7 @@
     </div>
  
     <div id="wyniki"></div>
- 
+    
     <script>
       const API = "http://127.0.0.1:8000";
  
@@ -133,7 +133,7 @@
             '<p style="text-align:center;">Szukam najciekawszych kierunków...</p>';
  
           try {
-            // pobieramy loty i lotniska równolegle
+            // pobieramy standardowe loty i lotniska równolegle
             const [lotyResp, lotniskaResp] = await Promise.all([
               fetch(`${API}/operacje/loty`),
               fetch(`${API}/operacje/lotniska`),
@@ -148,67 +148,103 @@
             });
  
             wynikDiv.innerHTML = "";
+            let htmlWynikow = "";
+            let znaleziono = 0;
  
-            if (loty.length === 0) {
-              wynikDiv.innerHTML =
-                '<p style="text-align:center;">Niestety, nie znaleziono żadnych lotów w bazie.</p>';
-              return;
-            }
- 
-            // filtry - wpisujemy KODY IATA (WAW, JFK), nie ID
+            // filtry - wpisujemy KODY IATA (WAW, JFK)
             const skadFiltr = document.getElementById("skad").value.toUpperCase().trim();
             const dokadFiltr = document.getElementById("dokad").value.toUpperCase().trim();
  
-            let znaleziono = 0;
- 
-            loty.forEach((lot) => {
-              // pobieramy pełne obiekty lotnisk z mapy
-              const wylot = mapaLotnisk[lot.id_lotniska_wylotu];
-              const przylot = mapaLotnisk[lot.id_lotniska_przylotu];
- 
-              // jeśli któreś lotnisko nie istnieje w mapie - pomijamy lot
-              if (!wylot || !przylot) return;
- 
-              // filtrowanie po KODACH lotnisk (nie po numerze lotu!)
-              const pasujeSkad = skadFiltr === "" || wylot.kod === skadFiltr;
-              const pasujeDokad = dokadFiltr === "" || przylot.kod === dokadFiltr;
- 
-              if (pasujeSkad && pasujeDokad) {
-                // formatowanie czasów (z ISO na czytelny format polski)
-                const wylotData = new Date(lot.czas_wylotu).toLocaleString("pl-PL", {
-                  day: "2-digit", month: "2-digit", year: "numeric",
-                  hour: "2-digit", minute: "2-digit",
-                });
-                const przylotData = new Date(lot.czas_przylotu).toLocaleString("pl-PL", {
-                  day: "2-digit", month: "2-digit", year: "numeric",
-                  hour: "2-digit", minute: "2-digit",
-                });
- 
-                wynikDiv.innerHTML += `
-                  <div class="lot-karta">
-                    <strong>Lot ${lot.numer_lotu}</strong>
-                    <div class="trasa">
-                      ${wylot.kod} (${wylot.miasto}) → ${przylot.kod} (${przylot.miasto})
+            // ==========================================
+            // 1. WYSZUKIWANIE LOTÓW BEZPOŚREDNICH
+            // ==========================================
+            if (loty.length > 0) {
+              loty.forEach((lot) => {
+                const wylot = mapaLotnisk[lot.id_lotniska_wylotu];
+                const przylot = mapaLotnisk[lot.id_lotniska_przylotu];
+  
+                if (!wylot || !przylot) return;
+  
+                const pasujeSkad = skadFiltr === "" || wylot.kod === skadFiltr;
+                const pasujeDokad = dokadFiltr === "" || przylot.kod === dokadFiltr;
+  
+                if (pasujeSkad && pasujeDokad) {
+                  const wylotData = new Date(lot.czas_wylotu).toLocaleString("pl-PL", {
+                    day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit",
+                  });
+                  const przylotData = new Date(lot.czas_przylotu).toLocaleString("pl-PL", {
+                    day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit",
+                  });
+  
+                  htmlWynikow += `
+                    <div class="lot-karta">
+                      <strong>Lot bezpośredni: ${lot.numer_lotu}</strong>
+                      <div class="trasa">
+                        ${wylot.kod} (${wylot.miasto}) → ${przylot.kod} (${przylot.miasto})
+                      </div>
+                      <div class="czasy">
+                        Wylot: ${wylotData}<br>
+                        Przylot: ${przylotData}
+                      </div>
+                      <div class="cena">Cena: ${lot.cena_bazowa} PLN</div>
+                      <small>Wolne miejsca: ${lot.wolne_miejsca}</small>
+                      <button class="btn-wybierz" onclick="wybierzLot(${lot.id})">
+                        Wybierz ten lot →
+                      </button>
                     </div>
-                    <div class="czasy">
-                      Wylot: ${wylotData}<br>
-                      Przylot: ${przylotData}
-                    </div>
-                    <div class="cena">Cena: ${lot.cena_bazowa} PLN</div>
-                    <small>Wolne miejsca: ${lot.wolne_miejsca}</small>
-                    <button class="btn-wybierz" onclick="wybierzLot(${lot.id})">
-                      Wybierz ten lot →
-                    </button>
-                  </div>
-                `;
-                znaleziono++;
-              }
-            });
- 
-            if (znaleziono === 0) {
-              wynikDiv.innerHTML =
-                '<p style="text-align:center;">Brak lotów dla podanych kryteriów.</p>';
+                  `;
+                  znaleziono++;
+                }
+              });
             }
+
+            // ==========================================
+            // 2. WYSZUKIWANIE LOTÓW Z PRZESIADKAMI (API)
+            // ==========================================
+            // Odpytujemy API o przesiadki tylko, jeśli użytkownik podał oba kody
+            if (skadFiltr !== "" && dokadFiltr !== "") {
+                const przesiadkiResp = await fetch(`${API}/operacje/loty/przesiadki?skad=${skadFiltr}&dokad=${dokadFiltr}`);
+                
+                if (przesiadkiResp.ok) {
+                    const przesiadki = await przesiadkiResp.json();
+                    
+                    przesiadki.forEach(p => {
+                        const wylotData = new Date(p.czas_wylotu_pierwszego).toLocaleString("pl-PL", {
+                            day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit"
+                        });
+                        const przylotData = new Date(p.czas_przylotu_na_miejsce).toLocaleString("pl-PL", {
+                            day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit"
+                        });
+
+                        htmlWynikow += `
+                          <div class="lot-karta" style="border-left-color: #e67e22;">
+                            <strong>Lot z przesiadką</strong>
+                            <div class="trasa">
+                              ${p.lotnisko_start} → ${p.lotnisko_przesiadki} → ${p.lotnisko_cel}
+                            </div>
+                            <div class="czasy">
+                              Odcinek 1: ${p.pierwszy_lot}<br>
+                              Odcinek 2: ${p.drugi_lot}<br><br>
+                              Wylot: ${wylotData}<br>
+                              Przylot do celu: ${przylotData}
+                            </div>
+                            <button class="btn-wybierz" onclick="alert('Aby zarezerwować to połączenie, musisz zarezerwować oba odcinki lotu (Moduł podwójnych rezerwacji w budowie).')">
+                              Sprawdź przesiadkę →
+                            </button>
+                          </div>
+                        `;
+                        znaleziono++;
+                    });
+                }
+            }
+
+            // Renderowanie wyników na ekranie
+            if (znaleziono === 0) {
+              wynikDiv.innerHTML = '<p style="text-align:center;">Brak lotów dla podanych kryteriów.</p>';
+            } else {
+              wynikDiv.innerHTML = htmlWynikow;
+            }
+
           } catch (error) {
             wynikDiv.innerHTML =
               '<p style="text-align:center; color:red;">Błąd połączenia z serwerem. Uvicorn działa?</p>';
@@ -227,5 +263,7 @@
         window.location.href = `rezerwacja.html?lot_id=${idLotu}`;
       }
     </script>
+ 
+    
   </body>
 </html>
