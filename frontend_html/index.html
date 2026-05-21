@@ -130,16 +130,21 @@
             const data = await response.json();
  
             if (response.ok) {
-              komunikatDiv.style.color = "green";
-              komunikatDiv.innerText =
-                "Zalogowano pomyślnie! Witamy " + data.login;
+  		komunikatDiv.style.color = "green";
+  		komunikatDiv.innerText = "Zalogowano pomyślnie! Witamy " + data.login;
  
               // zapisujemy sesję w localStorage - inne strony moga sprawdzić czy ktoś jest zalogowany
-              localStorage.setItem("login", data.login);
-              localStorage.setItem("rola", data.rola);
+             	localStorage.setItem("login", data.login);
+  		localStorage.setItem("rola", data.rola);
  
               // tutaj można przekierować użytkownika do innej strony np.:
-              // setTimeout(() => { window.location.href = "wyszukiwarka.html"; }, 1500);
+              setTimeout(() => {
+    		if (data.rola === "admin") {
+      			window.location.href = "admin.html";
+    		} else {
+      			window.location.href = "wyszukiwarka.html";
+    		}
+  	    }, 1000);
             } else {
               komunikatDiv.style.color = "red";
               komunikatDiv.innerText = "Błąd: " + data.detail;
