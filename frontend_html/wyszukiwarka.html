@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SzwagiAIR - Wyszukaj lot</title>
-
+ 
     <style>
       body {
         font-family: Arial, sans-serif;
@@ -32,7 +32,6 @@
         margin-bottom: 15px;
         text-align: left;
       }
-
       .form-group label {
         display: block;
         margin-bottom: 5px;
@@ -45,6 +44,7 @@
         border: 1px solid #ccc;
         border-radius: 4px;
         box-sizing: border-box;
+        text-transform: uppercase;
       }
       button {
         width: 100%;
@@ -77,6 +77,29 @@
         color: #003366;
         font-size: 16px;
       }
+      .lot-karta .trasa {
+        font-size: 18px;
+        font-weight: bold;
+        color: #003366;
+        margin: 8px 0;
+      }
+      .lot-karta .czasy {
+        color: #555;
+        margin: 5px 0;
+        line-height: 1.5;
+      }
+      .lot-karta .cena {
+        color: #007e3a;
+        font-weight: bold;
+        margin-top: 5px;
+      }
+      .btn-wybierz {
+        background-color: #e67e22;
+        margin-top: 10px;
+      }
+      .btn-wybierz:hover {
+        background-color: #d35400;
+      }
     </style>
   </head>
   <body>
@@ -85,93 +108,103 @@
       <form id="searchForm">
         <div class="form-group">
           <label for="skad">Skąd (Kod lotniska, np. WAW)</label>
-          <input type="text" id="skad" placeholder="Opcjonalne..." />
+          <input type="text" id="skad" placeholder="Opcjonalne..." maxlength="3" />
         </div>
         <div class="form-group">
-          <label for="dokad">Dokąd (Kod lotniska, np. NYC)</label>
-          <input type="text" id="dokad" placeholder="Opcjonalnie..." />
+          <label for="dokad">Dokąd (Kod lotniska, np. JFK)</label>
+          <input type="text" id="dokad" placeholder="Opcjonalnie..." maxlength="3" />
         </div>
         <button type="submit">Szukaj lotów</button>
       </form>
     </div>
-
+ 
     <div id="wyniki"></div>
-
+ 
     <script>
+      const API = "http://127.0.0.1:8000";
+ 
       document
         .getElementById("searchForm")
         .addEventListener("submit", async function (event) {
-          event.preventDefault(); // zapobiega przeładowaniu
-
+          event.preventDefault();
+ 
           const wynikDiv = document.getElementById("wyniki");
           wynikDiv.innerHTML =
             '<p style="text-align:center;">Szukam najciekawszych kierunków...</p>';
-
+ 
           try {
-            // endpoint pobierania lotów
-            const response = await fetch("http://127.0.0.1:8000/operacje/loty");
-            const loty = await response.json();
-
+            // pobieramy loty i lotniska równolegle
+            const [lotyResp, lotniskaResp] = await Promise.all([
+              fetch(`${API}/operacje/loty`),
+              fetch(`${API}/operacje/lotniska`),
+            ]);
+            const loty = await lotyResp.json();
+            const lotniska = await lotniskaResp.json();
+ 
+            // mapa ID -> obiekt lotniska (do zamiany ID na kod IATA i miasto)
+            const mapaLotnisk = {};
+            lotniska.forEach((l) => {
+              mapaLotnisk[l.id] = l;
+            });
+ 
             wynikDiv.innerHTML = "";
-
+ 
             if (loty.length === 0) {
               wynikDiv.innerHTML =
                 '<p style="text-align:center;">Niestety, nie znaleziono żadnych lotów w bazie.</p>';
               return;
             }
-
-            //
-            const skadFiltr = document
-              .getElementById("skad")
-              .value.toUpperCase();
-            const dokadFiltr = document
-              .getElementById("dokad")
-              .value.toUpperCase();
-
+ 
+            // filtry - wpisujemy KODY IATA (WAW, JFK), nie ID
+            const skadFiltr = document.getElementById("skad").value.toUpperCase().trim();
+            const dokadFiltr = document.getElementById("dokad").value.toUpperCase().trim();
+ 
             let znaleziono = 0;
-
+ 
             loty.forEach((lot) => {
-              //   // zamiana danych na tekst i porównanie z filtrem
-              //   const startBaza = String(lot.id_lotniska_start).toUpperCase();
-              //   const celBaza = String(lot.id_lotniska_cel).toUpperCase();
-
-              // 1. Zamiana danych na tekst
-              const numerLotu = String(lot.numer_lotu || "").toUpperCase();
-              const wylot = lot.id_lotniska_wylotu || "Brak";
-              const przylot = lot.id_lotniska_przylotu || "Brak";
-
-              // 2. Sprawdzenie, czy pasuje do filtrów
-              const pasujeSkad =
-                skadFiltr === "" || numerLotu.includes(skadFiltr); // puste pola są ok
-              const pasujeDokad =
-                dokadFiltr === "" || numerLotu.includes(dokadFiltr);
-
-              // 3.Gdy oba pasują:
+              // pobieramy pełne obiekty lotnisk z mapy
+              const wylot = mapaLotnisk[lot.id_lotniska_wylotu];
+              const przylot = mapaLotnisk[lot.id_lotniska_przylotu];
+ 
+              // jeśli któreś lotnisko nie istnieje w mapie - pomijamy lot
+              if (!wylot || !przylot) return;
+ 
+              // filtrowanie po KODACH lotnisk (nie po numerze lotu!)
+              const pasujeSkad = skadFiltr === "" || wylot.kod === skadFiltr;
+              const pasujeDokad = dokadFiltr === "" || przylot.kod === dokadFiltr;
+ 
               if (pasujeSkad && pasujeDokad) {
+                // formatowanie czasów (z ISO na czytelny format polski)
+                const wylotData = new Date(lot.czas_wylotu).toLocaleString("pl-PL", {
+                  day: "2-digit", month: "2-digit", year: "numeric",
+                  hour: "2-digit", minute: "2-digit",
+                });
+                const przylotData = new Date(lot.czas_przylotu).toLocaleString("pl-PL", {
+                  day: "2-digit", month: "2-digit", year: "numeric",
+                  hour: "2-digit", minute: "2-digit",
+                });
+ 
                 wynikDiv.innerHTML += `
-                      <div class = "lot-karta">
-                          <strong>Lot ${lot.numer_lotu}</strong>
-                          <div class="trasa">
-                            ${wylot.kod} (${wylot.miasto}) → ${przylot.kod} (${przylot.miasto})
-                          </div>
-                          <div class="czasy">
-                            Wylot: ${wylotData}<br>
-                            Przylot: ${przylotData}
-                          </div>
-                          <div class="cena">Cena: ${lot.cena_bazowa} PLN</div>
-                          <small>Wolne miejsca: ${lot.wolne_miejsca}</small>
-                          <br>
-                          <button onclick="wybierzLot(${lot.id})"
-                              style="margin-top:10px; background-color:#e67e22;">
-                            Wybierz ten lot →
-                          </button>
-                      </div>
-                      `;
+                  <div class="lot-karta">
+                    <strong>Lot ${lot.numer_lotu}</strong>
+                    <div class="trasa">
+                      ${wylot.kod} (${wylot.miasto}) → ${przylot.kod} (${przylot.miasto})
+                    </div>
+                    <div class="czasy">
+                      Wylot: ${wylotData}<br>
+                      Przylot: ${przylotData}
+                    </div>
+                    <div class="cena">Cena: ${lot.cena_bazowa} PLN</div>
+                    <small>Wolne miejsca: ${lot.wolne_miejsca}</small>
+                    <button class="btn-wybierz" onclick="wybierzLot(${lot.id})">
+                      Wybierz ten lot →
+                    </button>
+                  </div>
+                `;
                 znaleziono++;
               }
             });
-
-            // gdy nie znaleziono pasujących lotów
+ 
             if (znaleziono === 0) {
               wynikDiv.innerHTML =
                 '<p style="text-align:center;">Brak lotów dla podanych kryteriów.</p>';
@@ -179,18 +212,18 @@
           } catch (error) {
             wynikDiv.innerHTML =
               '<p style="text-align:center; color:red;">Błąd połączenia z serwerem. Uvicorn działa?</p>';
+            console.error("Szczegóły błędu:", error);
           }
         });
-        
-        function wybierzLot(idLotu) {
-        // sprawdzamy czy zalogowany - bez tego nie ma rezerwacji
+ 
+      // przekierowanie do rezerwacji po kliknięciu "Wybierz"
+      function wybierzLot(idLotu) {
         const login = localStorage.getItem("login");
         if (!login) {
           alert("Musisz się zalogować, aby zarezerwować lot!");
           window.location.href = "index.html";
           return;
         }
-        // przekierowanie do rezerwacji z ID lotu w URL
         window.location.href = `rezerwacja.html?lot_id=${idLotu}`;
       }
     </script>

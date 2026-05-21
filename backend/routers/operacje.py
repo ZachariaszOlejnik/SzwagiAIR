@@ -118,13 +118,15 @@ def dodaj_wpis_harmonogramu(wpis: schemas.HarmonogramZalogiCreate, db: Session =
 
 @router.get("/raporty/szczegoly-lotow")
 def raport_szczegolowy_lotow(db: Session = Depends(get_session)):
-    """Pobranie szczegółowego raportu lotów (RAW SQL)."""
+    """Pobranie szczegółowego raportu lotów (RAW SQL) wraz z kodami IATA i miastami."""
 
     zapytanie = text("""
         SELECT
             l.numer_lotu,
             s.model AS model_samolotu,
+            wylot.kod AS kod_wylotu,
             wylot.miasto AS miasto_wylotu,
+            przylot.kod AS kod_przylotu,
             przylot.miasto AS miasto_przylotu,
             l.czas_wylotu,
             l.czas_przylotu,
@@ -143,29 +145,32 @@ def raport_szczegolowy_lotow(db: Session = Depends(get_session)):
 
 ### --- PRZESIADKI (RAW SQL) --- ###
 @router.get("/loty/przesiadki")
-def szukaj_lotow_z_przesiadkami(skad:int, dokad:int, db: Session = Depends(get_session)):
-    """Zaawansowane wyszukiwanie lotów z przesiadkami"""
+def szukaj_lotow_z_przesiadkami(skad:str, dokad:str, db: Session = Depends(get_session)):
+    """Zaawansowane wyszukiwanie lotów z przesiadkami na podstawie kodów IATA"""
 
     zapytanie = text("""
     SELECT
         l1.numer_lotu AS pierwszy_lot,
-        l1.id_lotniska_wylotu AS lotnisko_start,
-        l1.id_lotniska_przylotu AS lotnisko_przesiadki,
+        start_lotnisko.kod AS lotnisko_start,
+        przesiadka_lotnisko.kod AS lotnisko_przesiadki,
         l2.numer_lotu AS drugi_lot,
-        l2.id_lotniska_przylotu AS lotnisko_cel,
+        cel_lotnisko.kod AS lotnisko_cel,
         l1.czas_wylotu AS czas_wylotu_pierwszego,
         l2.czas_przylotu AS czas_przylotu_na_miejsce
     FROM loty l1
     JOIN loty l2 ON l1.id_lotniska_przylotu = l2.id_lotniska_wylotu
-    WHERE l1.id_lotniska_wylotu = :param_skad
-    AND l2.id_lotniska_przylotu = :param_dokad
+    JOIN lotniska start_lotnisko ON l1.id_lotniska_wylotu = start_lotnisko.id
+    JOIN lotniska przesiadka_lotnisko ON l1.id_lotniska_przylotu = przesiadka_lotnisko.id
+    JOIN lotniska cel_lotnisko ON l2.id_lotniska_przylotu = cel_lotnisko.id
+    WHERE start_lotnisko.kod = :param_skad
+    AND cel_lotnisko.kod = :param_dokad
     AND l2.czas_wylotu > l1.czas_przylotu
-""")
+    """)
     
     # .mappings():
     # WAW-NYC-01", 1, 3, "NYC-LAX-02", 4 -----> {"pierwszy_lot": "WAW-NYC-01", "lotnisko_start": 1, ...}
 
-    wyniki = db.execute(zapytanie, {"param_skad":skad, "param_dokad":dokad}).mappings().all()
+    wyniki = db.execute(zapytanie, {"param_skad":skad.upper, "param_dokad":dokad.upper}).mappings().all()
     
     # konwersja listy obiektów RowMapping na standardowe słowniki Pythona (dict) - był błąd
     # return wyniki
