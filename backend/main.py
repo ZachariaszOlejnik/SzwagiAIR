@@ -53,6 +53,9 @@ app.include_router(autoryzacja_router)  # podpiąłem logowanie
 #   docker compose up -d
 #   uvicorn main:app --reload
 
+#wypelnienie bazy danymi testowymi (folder backend):
+#   python seed.py
+
 
 # adres: http://127.0.0.1:8000/docs
 
