@@ -112,6 +112,32 @@
       .btn-tabela:hover {
         background-color: #2980b9;
       }
+
+      /* ZAŁOGA (CHECKBOXY) */
+      .zaloga-kontener {
+        display: flex;
+        gap: 20px;
+      }
+
+      .zaloga-kolumna {
+        flex: 1;
+        background: white;
+        padding: 15px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+      }
+
+      .pracownik-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px;
+        border-bottom: 1px solid #eee;
+      }
+
+      .ukryty {
+        display: none !important;
+      }
     </style>
   </head>
   <body>
@@ -119,18 +145,21 @@
       <h2>✈️ SzwagiAIR Admin</h2>
       <p><small>Zalogowano jako: Admin</small></p>
       <br />
-      <button>📊 Siatka lotów (Dasboard)</button>
-      <button>👨‍✈️ Zarządzanie załogą</button>
-      <button>🏷️ Katalog usług</button>
+      <button onclick="zmienWidok('dashboard')">
+        📊 Siatka lotów (Dashboard)
+      </button>
+      <button onclick="zmienWidok('zaloga')">👨‍✈️ Zarządzanie załogą</button>
+      <button onclick="zmienWidok('katalog')">🏷️ Katalog usług</button>
       <br /><br />
       <button style="background-color: #c0392b">🚪 Wyloguj</button>
     </div>
 
     <div class="main-content">
+      <!-- SEKCJA DASHBOARD -->
       <section id="dashboard">
         <div class="header-top">
           <h2>Siatka lotów</h2>
-          <button class="btn-akcje">+ Dodaj nowy lot</button>
+          <button class="btn-akcja">+ Dodaj nowy lot</button>
         </div>
 
         <table>
@@ -150,6 +179,66 @@
               <td colspan="7" style="text-align: center">
                 Ładowanie danych z serwera...
               </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- SEKCJA ZAŁOGI -->
+      <section id="zaloga" class="ukryty">
+        <div class="header-top">
+          <h2 id="tytul-zalogi">Zarządzanie załogą</h2>
+          <button class="btn-akcja">Zapisz zmiany w bazie</button>
+        </div>
+
+        <div class="zaloga-kontener">
+          <div class="zaloga-kolumna">
+            <h3>Piloci</h3>
+            <div class="pracownik-item">
+              <label>Kpt. Jan Kowalski (ID: 1)</label>
+              <input type="checkbox" checked />
+            </div>
+            <div class="pracownik-item">
+              <label>F/O Maria Nowak (ID:2)</label>
+              <input type="checkbox" checked />
+            </div>
+          </div>
+          <div class="zaloga-kolumna">
+            <h3>Personel Pokładowy</h3>
+            <div class="pracownik-item">
+              <label>Anna Kowalczyk (ID: 3)</label>
+              <input type="checkbox" checked />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SEKCJA KATOLOG USŁUG -->
+      <section id="katalog" class="ukryty">
+        <div class="header-top">
+          <h2>Katalog Usług</h2>
+          <button class="btn-akcja">+ Dodaj usługę</button>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Nazwa usługi</th>
+              <th>Cena (PLN)</th>
+            </tr>
+          </thead>
+
+          <tbody id="tabela-uslug">
+            <tr>
+              <td>1</td>
+              <td>Bagaż rejestrowany 20 kg</td>
+              <td>150.00</td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td>Strefa VIP Lounge</td>
+              <td>280.00</td>
             </tr>
           </tbody>
         </table>
@@ -184,7 +273,7 @@
               <td>${lot.id_lotniska_przylotu}</td>
               <td>${new Date(lot.czas_wylotu).toLocaleString("pl-PL")}</td> <td>${lot.wolne_miejsca}</td>
                 <td>
-                  <button class="btn-tabela" onclick="otworzZaloge(${lot.id})">Zarządzaj załogą</button>
+                  <button class="btn-tabela" onclick="otworzZaloge(${lot.id}, '${lot.numer_lotu}')">Zarządzaj załogą</button>
                 </td>
                 </tr>
             `;
@@ -197,7 +286,7 @@
 
           document.getElementById("tabela-lotow").innerHTML = `
             <tr>
-              <td colspan="7" style="text-align:center, color:red;">
+              <td colspan="7" style="text-align:center; color:red;">
                 Nie udało sie pobrać danych serwera. Serwer działa?
               </td>
             </tr>
@@ -205,9 +294,24 @@
         }
       }
 
-      // DODAĆ POTEM FUNKCJE ZARZĄDZANIA ZAŁOGĄ
-      function otworzZaloge(idLotu) {
-        alert("DODAĆ POTEM FUNKCJE ZARZĄDZANIA ZAŁOGĄ. ID lotu: " + idLotu);
+      // FUNKCJA PRZEŁĄCZAJĄCA WIDOKI (Single page Application) /////////////////////
+      function zmienWidok(idWidoku) {
+        // wszytsko najpierw ukryte
+        document.getElementById("dashboard").classList.add("ukryty");
+        document.getElementById("zaloga").classList.add("ukryty");
+        document.getElementById("katalog").classList.add("ukryty");
+
+        // wybrana kalsa jest pokazana
+        document.getElementById(idWidoku).classList.remove("ukryty");
+      }
+
+      // OBSŁUGA KLIKNIĘCIA W TABELI
+      function otworzZaloge(idLotu, numer_lotu) {
+        document.getElementById("tytul-zalogi").innerHTML =
+          "Zarządzanie załogą (Lot: " + numer_lotu + ")";
+
+        // przełączenie widoku
+        zmienWidok("zaloga");
       }
 
       // krok 5: autmatyczne uruchomienie pobierania lotów po otwrciu strony
