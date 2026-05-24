@@ -7,48 +7,110 @@
 
     <style>
       body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        display: flex;
+        height: 100vh;
+        background-color: #f4f7f6;
+        color: #333;
       }
 
-      /* SIDEBAR */
+      /* SIDEBAR  (menu lewe) */
       .sidebar {
+        width: 250px;
+        background-color: #2c3e50;
+        color: #ecf0f1;
+        padding: 20px;
+        box-sizing: border-box;
       }
 
       .sidebar h2 {
+        margin-top: 0;
+        font-size: 20px;
+        border-bottom: 1px solid #34495e;
+        padding-bottom: 15px;
       }
 
       .sidebar button {
+        width: 100%;
+        background-color: #34495e;
+        color: white;
+        border: none;
+        padding: 12px;
+        margin-bottom: 10px;
+        cursor: pointer;
+        text-align: left;
+        font-size: 14px;
+        border-radius: 4px;
       }
 
       .sidebar button:hover {
+        background-color: #e67e22;
       }
 
+      /* GŁÓWNY */
       .main-content {
+        flex: 1;
+        padding: 30px;
+        overflow-y: auto;
+        box-sizing: border-box;
       }
 
       .header-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 2px solid #ddd;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
       }
 
       .btn-akcja {
+        background-color: #e67e22;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        cursor: pointer;
+        border-radius: 4px;
+        font-weight: bold;
       }
 
       .btn-akcja:hover {
+        background-color: #d35400;
       }
 
       /* TABELE */
       table {
+        width: 100%;
+        border-collapse: collapse;
+        background-color: white;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
       }
 
       th,
       td {
+        padding: 12px;
+        border: 1px solid #ddd;
+        text-align: left;
       }
 
       th {
+        background-color: #cef0f1;
       }
 
+      /* Przyciski akcji w tabeli */
       .btn-tabela {
+        background-color: #3498db;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        cursor: pointer;
+        border-radius: 4px;
+        font-size: 12px;
       }
 
       .btn-tabela:hover {
+        background-color: #2980b9;
       }
     </style>
   </head>
@@ -65,7 +127,91 @@
     </div>
 
     <div class="main-content">
-      <section id="dashboard"></section>
+      <section id="dashboard">
+        <div class="header-top">
+          <h2>Siatka lotów</h2>
+          <button class="btn-akcje">+ Dodaj nowy lot</button>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>ID Lotu</th>
+              <th>Numer Lotu</th>
+              <th>ID Wylotu</th>
+              <th>ID Przylotu</th>
+              <th>Data wylotu</th>
+              <th>Wolne miejsca</th>
+              <th>Akcja</th>
+            </tr>
+          </thead>
+          <tbody id="tabela-lotow">
+            <tr>
+              <td colspan="7" style="text-align: center">
+                Ładowanie danych z serwera...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
     </div>
+
+    <script>
+      // krok 1. Podłączenie URL backendu
+      const API_URL = "http://127.0.0.1:8000/operacje/loty";
+
+      // krok 2: funkcja asynchroniczna pobierająca dane
+      // async/await dlatego, że zapytanie do bazy (fetch) trwa chwilę i przeglądarka czeka
+      async function pobierzloty() {
+        try {
+          // Rządanie GET do backendu:
+          const odpowiedz = await fetch(API_URL);
+
+          // RAW na obiekt JSON:
+          const loty = await odpowiedz.json();
+
+          const tabela = document.getElementById("tabela-lotow");
+
+          tabela.innerHTML = ""; // krok 3: Wyczeyszczenie napisu ładowania
+
+          // krok 4: Pętla przechodzi przez każdy zwrócony lot
+          loty.forEach((lot) => {
+            const wiersz = `
+            <tr>
+              <td>${lot.id}</td>
+              <td><strong>${lot.numer_lotu}</strong></td>
+              <td>${lot.id_lotniska_wylotu}</td>
+              <td>${lot.id_lotniska_przylotu}</td>
+              <td>${new Date(lot.czas_wylotu).toLocaleString("pl-PL")}</td> <td>${lot.wolne_miejsca}</td>
+                <td>
+                  <button class="btn-tabela" onclick="otworzZaloge(${lot.id})">Zarządzaj załogą</button>
+                </td>
+                </tr>
+            `;
+
+            // Doklejanie wygenerowanego wiersza na koniec tabeli
+            tabela.innerHTML += wiersz;
+          });
+        } catch (error) {
+          console.error("Błąd podczas pobierania lotów:", error);
+
+          document.getElementById("tabela-lotow").innerHTML = `
+            <tr>
+              <td colspan="7" style="text-align:center, color:red;">
+                Nie udało sie pobrać danych serwera. Serwer działa?
+              </td>
+            </tr>
+          `;
+        }
+      }
+
+      // DODAĆ POTEM FUNKCJE ZARZĄDZANIA ZAŁOGĄ
+      function otworzZaloge(idLotu) {
+        alert("DODAĆ POTEM FUNKCJE ZARZĄDZANIA ZAŁOGĄ. ID lotu: " + idLotu);
+      }
+
+      // krok 5: autmatyczne uruchomienie pobierania lotów po otwrciu strony
+      window.onload = pobierzloty;
+    </script>
   </body>
 </html>
