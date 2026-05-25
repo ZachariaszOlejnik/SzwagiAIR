@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
 from database import get_session
+from auth_utils import stworz_token
 import models
 
 # rejestracja routera
@@ -11,49 +13,56 @@ router = APIRouter(
 )
 
 # ==========================================
-# --- LOGOWANIE ---
+# --- LOGOWANIE (JWT) ---
 # ==========================================
-
-# proste logowanie (tymczasowe)
-class LoginRequest(BaseModel):
-    login: str
-    haslo: str
-
+ 
 @router.post("/login")
-def logowanie(dane: LoginRequest, db: Session = Depends(get_session)):
-    """Sprawdza dane: login i hasło w bazie (tabela: Konta użytkowników)"""
-
-    # 1. szukamy użytkownika o podanym loginie
-    uzytkownik = db.query(models.KontoUzytkownika).filter(models.KontoUzytkownika.login == dane.login).first()
-
-    # 2. sprawdzamy czy użytkownik istnieje
-    if not uzytkownik:
-        # ogólny komunikat dla bezpieczeństwa
-        raise HTTPException(status_code=401, detail="Nieprawidłowy login lub hasło.")
-    
-    # 3. Sprawdzamy hasło (nie szyfrowane)
-    if uzytkownik.haslo_hash != dane.haslo:
-        raise HTTPException(status_code=401, detail="Nieprawidłowy login lub hasło.")
-    
-    # 4. Sukces! Zwracamy dane do frontu
+def logowanie(dane: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_session)):
+    """
+    Logowanie zgodne z OAuth2 - zwraca token JWT.
+ 
+    UWAGA: OAuth2PasswordRequestForm wymaga pól 'username' i 'password'
+    wysłanych jako form-data (nie JSON). W Swaggerze i przycisku Authorize
+    działa to automatycznie. Pole 'username' = nasz email/login.
+    """
+    # 1. szukamy użytkownika (username z formularza = nasz login/email)
+    uzytkownik = db.query(models.KontoUzytkownika).filter(
+        models.KontoUzytkownika.login == dane.username
+    ).first()
+ 
+    # 2. sprawdzamy istnienie + hasło (plaintext - MVP)
+    if not uzytkownik or uzytkownik.haslo_hash != dane.password:
+        raise HTTPException(
+            status_code=401,
+            detail="Nieprawidłowy login lub hasło.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+ 
+    # 3. tworzymy token JWT zawierający login (sub) i rolę
+    token = stworz_token({
+        "sub": uzytkownik.login,
+        "rola": uzytkownik.rola_systemowa,
+    })
+ 
+    # 4. zwracamy token w formacie oczekiwanym przez OAuth2
+    #    access_token + token_type to standard - Swagger to rozumie
     return {
-        "status": "sukces",
+        "access_token": token,
+        "token_type": "bearer",
         "login": uzytkownik.login,
-        "rola": uzytkownik.rola_systemowa
+        "rola": uzytkownik.rola_systemowa,
     }
-
+ 
+ 
 # ==========================================
 # --- REJESTRACJA ---
 # ==========================================
-
-# Schema żądania rejestracji - łączy dane Pasażera i Konta w jednym formularzu
+ 
 class RejestracjaRequest(BaseModel):
-    # dane pasażera
     imie: str = Field(..., min_length=2, max_length=50)
     nazwisko: str = Field(..., min_length=2, max_length=50)
     email: str = Field(..., max_length=100)
     telefon: str = Field(..., min_length=9, max_length=20)
-    # dane konta logowania
     haslo: str = Field(..., min_length=6, max_length=100, description="Hasło musi mieć min. 6 znaków")
  
  
@@ -61,21 +70,21 @@ class RejestracjaRequest(BaseModel):
 def rejestracja(dane: RejestracjaRequest, db: Session = Depends(get_session)):
     """
     Tworzy nowego Pasażera oraz powiązane z nim Konto Użytkownika.
-    Login = email pasażera (tymczasowo).
-    Rola domyślnie 'pasazer' - administrator jest dodawany ręcznie do bazy.
+    Login = email pasażera. Rola domyślnie 'pasazer'.
+    Rejestracja jest publiczna (nie wymaga tokenu - inaczej nikt nie mógłby
+    założyć pierwszego konta).
     """
- 
-    # 1. Sprawdzamy, czy pasażer z tym emailem już istnieje
+    # 1. czy pasażer z tym emailem już istnieje?
     istniejacy_pasazer = db.query(models.Pasazer).filter(models.Pasazer.email == dane.email).first()
     if istniejacy_pasazer:
         raise HTTPException(status_code=400, detail="Pasażer z tym adresem email już istnieje!")
  
-    # 2. Sprawdzamy, czy login (== email) nie jest już zajęty w tabeli kont
+    # 2. czy login (== email) nie jest zajęty?
     istniejace_konto = db.query(models.KontoUzytkownika).filter(models.KontoUzytkownika.login == dane.email).first()
     if istniejace_konto:
         raise HTTPException(status_code=400, detail="Konto z tym loginem już istnieje!")
  
-    # 3. Tworzymy najpierw Pasażera (bo konto wymaga id_pasazera jako FK)
+    # 3. tworzymy Pasażera (konto wymaga id_pasazera jako FK)
     nowy_pasazer = models.Pasazer(
         imie=dane.imie,
         nazwisko=dane.nazwisko,
@@ -83,24 +92,22 @@ def rejestracja(dane: RejestracjaRequest, db: Session = Depends(get_session)):
         telefon=dane.telefon
     )
     db.add(nowy_pasazer)
-    db.flush() # wymusza zapis do bazy, ale jeszcze nie commit - mamy ID pasażera
+    db.flush()  # mamy ID pasażera, jeszcze bez commita
  
-    # 4. Tworzymy Konto Użytkownika powiązane z nowym pasażerem
-    # UWAGA: hasło zapisywane plaintext (tymczasowo )
+    # 4. tworzymy Konto (hasło plaintext - MVP)
     nowe_konto = models.KontoUzytkownika(
         id_pasazera=nowy_pasazer.id,
-        login=dane.email, # login = email (uproszczenie)
+        login=dane.email,
         haslo_hash=dane.haslo,
-        rola_systemowa="pasazer" # domyślnie pasażer
+        rola_systemowa="pasazer"
     )
     db.add(nowe_konto)
  
-    # 5. Zapisujemy wszystko w jednej transakcji (jak coś pójdzie nie tak - rollback obu)
+    # 5. zapis w jednej transakcji
     db.commit()
     db.refresh(nowy_pasazer)
     db.refresh(nowe_konto)
  
-    # 6. Zwracamy dane do frontu (bez hasła)
     return {
         "status": "sukces",
         "wiadomosc": "Konto utworzone pomyślnie. Możesz się teraz zalogować.",

@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from database import get_session
+from auth_utils import pobierz_aktualnego_uzytkownika, wymagaj_admina
 import models
 import schemas
  
@@ -10,6 +11,14 @@ router = APIRouter(
     prefix="/sprzedaz",
     tags=["Moduł sprzedażowy (Klienci, Rezerwacje, Płatności)"]
 )
+ 
+# ZASADA AUTORYZACJI W TYM MODULE:
+# - GET (przeglądanie) -> publiczne
+# - POST/PATCH zwykłe (rezerwacje, bagaże, usługi, płatności) -> ZALOGOWANY pasażer
+#   przez Depends(pobierz_aktualnego_uzytkownika)
+# - Zarządzanie cennikiem (dodawanie usług do katalogu) -> tylko ADMIN
+#   przez Depends(wymagaj_admina)
+ 
  
 # ==========================================
 # --- PASAŻEROWIE ---
@@ -29,10 +38,13 @@ def pobierz_pasazera(id_pasazera: int, db: Session = Depends(get_session)):
     return pasazer
  
 @router.post("/pasazerowie", response_model=schemas.PasazerResponse)
-def dodaj_pasazera(pasazer: schemas.PasazerCreate, db: Session = Depends(get_session)):
+def dodaj_pasazera(
+    pasazer: schemas.PasazerCreate,
+    db: Session = Depends(get_session),
+    user = Depends(pobierz_aktualnego_uzytkownika),
+):
     """Dodaje nowego pasażera do systemu."""
     # Zabezpieczenie: email jest UNIQUE w bazie, więc sprawdzamy duplikat
-    # zanim baza rzuci IntegrityError (lepszy komunikat dla klienta)
     istniejacy = db.query(models.Pasazer).filter(models.Pasazer.email == pasazer.email).first()
     if istniejacy:
         raise HTTPException(status_code=400, detail="Pasażer z tym adresem email już istnieje!")
@@ -62,9 +74,12 @@ def pobierz_rezerwacje_po_id(id_rezerwacji: int, db: Session = Depends(get_sessi
     return rezerwacja
  
 @router.post("/rezerwacje", response_model=schemas.RezerwacjaResponse)
-def utworz_rezerwacje(rezerwacja: schemas.RezerwacjaCreate, db: Session = Depends(get_session)):
+def utworz_rezerwacje(
+    rezerwacja: schemas.RezerwacjaCreate,
+    db: Session = Depends(get_session),
+    user = Depends(pobierz_aktualnego_uzytkownika),
+):
     """Tworzy pustą rezerwację dla konkretnego pasażera."""
-    # Zabezpieczenie: Sprawdzamy czy pasażer istnieje
     pasazer_istnieje = db.query(models.Pasazer).filter(models.Pasazer.id == rezerwacja.id_pasazera).first()
     if not pasazer_istnieje:
         raise HTTPException(status_code=404, detail="Pasażer o podanym ID nie istnieje!")
@@ -76,7 +91,11 @@ def utworz_rezerwacje(rezerwacja: schemas.RezerwacjaCreate, db: Session = Depend
     return nowa_rezerwacja
  
 @router.patch("/rezerwacje/{id_rezerwacji}/anuluj", response_model=schemas.RezerwacjaResponse)
-def anuluj_rezerwacje(id_rezerwacji: int, db: Session = Depends(get_session)):
+def anuluj_rezerwacje(
+    id_rezerwacji: int,
+    db: Session = Depends(get_session),
+    user = Depends(pobierz_aktualnego_uzytkownika),
+):
     """
     Anuluje rezerwację (zmienia status na 'anulowana').
     Logika biznesowa: nie można anulować już anulowanej ani opłaconej rezerwacji.
@@ -110,26 +129,26 @@ def pobierz_odcinki_rezerwacji(db: Session = Depends(get_session)):
     return db.query(models.OdcinekRezerwacji).all()
  
 @router.post("/odcinki_rezerwacji", response_model=schemas.OdcinekRezerwacjiResponse)
-def dodaj_odcinek_rezerwacji(odcinek: schemas.OdcinekRezerwacjiCreate, db: Session = Depends(get_session)):
+def dodaj_odcinek_rezerwacji(
+    odcinek: schemas.OdcinekRezerwacjiCreate,
+    db: Session = Depends(get_session),
+    user = Depends(pobierz_aktualnego_uzytkownika),
+):
     """Dodaje konkretny lot do istniejącej rezerwacji."""
-    # Zabezpieczenie 1: Czy rezerwacja istnieje?
     rezerwacja = db.query(models.Rezerwacja).filter(models.Rezerwacja.id == odcinek.id_rezerwacji).first()
     if not rezerwacja:
         raise HTTPException(status_code=404, detail="Rezerwacja o podanym ID nie istnieje!")
  
-    # Zabezpieczenie 2: Nie można dokładać odcinków do anulowanej/opłaconej rezerwacji
     if rezerwacja.status in ("anulowana", "oplacona"):
         raise HTTPException(
             status_code=400,
             detail=f"Nie można modyfikować rezerwacji o statusie '{rezerwacja.status}'."
         )
  
-    # Zabezpieczenie 3: Czy lot istnieje?
     lot = db.query(models.Loty).filter(models.Loty.id == odcinek.id_lotu).first()
     if not lot:
         raise HTTPException(status_code=404, detail="Lot o podanym ID nie istnieje!")
  
-    # Zabezpieczenie 4: Czy miejsce na tym locie nie jest już zajęte przez inną rezerwację?
     miejsce_zajete = db.query(models.OdcinekRezerwacji).filter(
         models.OdcinekRezerwacji.id_lotu == odcinek.id_lotu,
         models.OdcinekRezerwacji.numer_miejsca == odcinek.numer_miejsca
@@ -140,14 +159,11 @@ def dodaj_odcinek_rezerwacji(odcinek: schemas.OdcinekRezerwacjiCreate, db: Sessi
             detail=f"Miejsce {odcinek.numer_miejsca} na tym locie jest już zajęte!"
         )
  
-    # Zabezpieczenie 5: Czy są jeszcze wolne miejsca na lot?
     if lot.wolne_miejsca <= 0:
         raise HTTPException(status_code=400, detail="Brak wolnych miejsc na ten lot!")
  
     nowy_odcinek = models.OdcinekRezerwacji(**odcinek.model_dump())
     db.add(nowy_odcinek)
- 
-    # Logika biznesowa: zmniejszamy licznik wolnych miejsc na locie
     lot.wolne_miejsca -= 1
  
     db.commit()
@@ -165,40 +181,37 @@ def pobierz_platnosci(db: Session = Depends(get_session)):
     return db.query(models.Platnosc).all()
  
 @router.post("/platnosci", response_model=schemas.PlatnoscResponse)
-def zrealizuj_platnosc(platnosc: schemas.PlatnoscCreate, db: Session = Depends(get_session)):
+def zrealizuj_platnosc(
+    platnosc: schemas.PlatnoscCreate,
+    db: Session = Depends(get_session),
+    user = Depends(pobierz_aktualnego_uzytkownika),
+):
     """
     Księguje nową płatność i automatycznie aktualizuje status rezerwacji.
     """
-    # 1. Pobieramy rezerwację, której dotyczy płatność
     rezerwacja = db.query(models.Rezerwacja).filter(models.Rezerwacja.id == platnosc.id_rezerwacji).first()
  
     if not rezerwacja:
         raise HTTPException(status_code=404, detail="Nie można opłacić nieistniejącej rezerwacji!")
  
-    # 2. Logika biznesowa: Sprawdzamy, czy rezerwacja nie jest już opłacona lub anulowana
     if rezerwacja.status == "oplacona":
         raise HTTPException(status_code=400, detail="Ta rezerwacja została już opłacona!")
  
     if rezerwacja.status == "anulowana":
         raise HTTPException(status_code=400, detail="Nie można opłacić anulowanej rezerwacji!")
  
-    # 3. Logika biznesowa: kwota płatności musi pokryć cenę rezerwacji
     if float(platnosc.kwota) < float(rezerwacja.cena_calkowita):
         raise HTTPException(
             status_code=400,
             detail=f"Kwota płatności ({platnosc.kwota}) jest niższa niż cena rezerwacji ({rezerwacja.cena_calkowita})."
         )
  
-    # 4. Tworzymy rekord płatności
     nowa_platnosc = models.Platnosc(**platnosc.model_dump())
     db.add(nowa_platnosc)
  
-    # 5. Logika biznesowa: status rezerwacji aktualizujemy TYLKO jeśli transakcja zakończona
-    # (płatność może być jeszcze "przetwarzana" lub "odrzucona")
     if nowa_platnosc.status_transakcji == "zakonczona":
         rezerwacja.status = "oplacona"
  
-    # Zapisujemy obie zmiany w bazie w jednej transakcji
     db.commit()
     db.refresh(nowa_platnosc)
  
@@ -215,21 +228,22 @@ def pobierz_bagaze(db: Session = Depends(get_session)):
     return db.query(models.Bagaz).all()
  
 @router.post("/bagaze", response_model=schemas.BagazResponse)
-def dodaj_bagaz(bagaz: schemas.BagazCreate, db: Session = Depends(get_session)):
+def dodaj_bagaz(
+    bagaz: schemas.BagazCreate,
+    db: Session = Depends(get_session),
+    user = Depends(pobierz_aktualnego_uzytkownika),
+):
     """Dodaje bagaż (podręczny lub rejestrowany) do istniejącej rezerwacji."""
-    # Zabezpieczenie 1: Czy rezerwacja istnieje?
     rezerwacja = db.query(models.Rezerwacja).filter(models.Rezerwacja.id == bagaz.id_rezerwacji).first()
     if not rezerwacja:
         raise HTTPException(status_code=404, detail="Rezerwacja o podanym ID nie istnieje!")
  
-    # Zabezpieczenie 2: Nie można dodawać bagażu do anulowanej rezerwacji
     if rezerwacja.status == "anulowana":
         raise HTTPException(status_code=400, detail="Nie można dodać bagażu do anulowanej rezerwacji!")
  
     nowy_bagaz = models.Bagaz(**bagaz.model_dump())
     db.add(nowy_bagaz)
  
-    # Logika biznesowa: doliczamy cenę bagażu do całkowitej ceny rezerwacji
     rezerwacja.cena_calkowita = float(rezerwacja.cena_calkowita) + float(bagaz.cena)
  
     db.commit()
@@ -247,7 +261,11 @@ def pobierz_katalog_uslug(db: Session = Depends(get_session)):
     return db.query(models.KatalogUslug).all()
  
 @router.post("/katalog_uslug", response_model=schemas.KatalogUslugResponse)
-def dodaj_usluge_do_katalogu(usluga: schemas.KatalogUslugCreate, db: Session = Depends(get_session)):
+def dodaj_usluge_do_katalogu(
+    usluga: schemas.KatalogUslugCreate,
+    db: Session = Depends(get_session),
+    admin = Depends(wymagaj_admina),   # zarządzanie cennikiem to rola ADMINA
+):
     """Dodaje nową usługę do katalogu (endpoint administracyjny)."""
     nowa_usluga = models.KatalogUslug(**usluga.model_dump())
     db.add(nowa_usluga)
@@ -266,18 +284,19 @@ def pobierz_uslugi_rezerwacji(db: Session = Depends(get_session)):
     return db.query(models.UslugaRezerwacji).all()
  
 @router.post("/uslugi_rezerwacji", response_model=schemas.UslugaRezerwacjiResponse)
-def dodaj_usluge_do_rezerwacji(usluga: schemas.UslugaRezerwacjiCreate, db: Session = Depends(get_session)):
+def dodaj_usluge_do_rezerwacji(
+    usluga: schemas.UslugaRezerwacjiCreate,
+    db: Session = Depends(get_session),
+    user = Depends(pobierz_aktualnego_uzytkownika),
+):
     """Dokupuje usługę z katalogu do istniejącej rezerwacji."""
-    # Zabezpieczenie 1: Czy rezerwacja istnieje?
     rezerwacja = db.query(models.Rezerwacja).filter(models.Rezerwacja.id == usluga.id_rezerwacji).first()
     if not rezerwacja:
         raise HTTPException(status_code=404, detail="Rezerwacja o podanym ID nie istnieje!")
  
-    # Zabezpieczenie 2: Nie można dokupić usługi do anulowanej rezerwacji
     if rezerwacja.status == "anulowana":
         raise HTTPException(status_code=400, detail="Nie można dodać usługi do anulowanej rezerwacji!")
  
-    # Zabezpieczenie 3: Czy usługa istnieje w katalogu?
     usluga_z_katalogu = db.query(models.KatalogUslug).filter(models.KatalogUslug.id == usluga.id_uslugi).first()
     if not usluga_z_katalogu:
         raise HTTPException(status_code=404, detail="Usługa o podanym ID nie istnieje w katalogu!")
@@ -285,17 +304,18 @@ def dodaj_usluge_do_rezerwacji(usluga: schemas.UslugaRezerwacjiCreate, db: Sessi
     nowa_usluga = models.UslugaRezerwacji(**usluga.model_dump())
     db.add(nowa_usluga)
  
-    # Logika biznesowa: doliczamy cenę usługi z katalogu do całkowitej ceny rezerwacji
     rezerwacja.cena_calkowita = float(rezerwacja.cena_calkowita) + float(usluga_z_katalogu.cena_standardowa)
  
     db.commit()
     db.refresh(nowa_usluga)
     return nowa_usluga
-
+ 
+ 
 # ==========================================
 # --- RAPORTY (RAW SQL) ---
 # ==========================================
-
+# Raporty zostają PUBLICZNE (GET).
+ 
 @router.get("/raporty/top-pasazerowie")
 def raport_top_pasazerowie(limit: int = 10, db: Session = Depends(get_session)):
     """
@@ -319,16 +339,17 @@ def raport_top_pasazerowie(limit: int = 10, db: Session = Depends(get_session)):
         ORDER BY suma_wydatkow DESC
         LIMIT :limit
     """)
-
-# Parametryzacja zabezpiecza przed SQL Injection (wymóg z dokumentacji projektowej)
+ 
+    # Parametryzacja zabezpiecza przed SQL Injection (wymóg z dokumentacji projektowej)
     wyniki = db.execute(zapytanie, {"limit": limit}).mappings().all()
     return wyniki
-
+ 
+ 
 @router.get("/raporty/przychody-miesieczne")
 def raport_przychody_miesieczne(rok: int = 2026, db: Session = Depends(get_session)):
     """
     Suma przychodów w podziale na miesiące dla wybranego roku.
-    Używa funkcji agregujących PostgreSQL: DATE_TRUNC + EXTRACT.
+    Używa funkcji agregujących PostgreSQL: EXTRACT.
     Parametr 'rok' - rok do analizy (domyślnie 2026).
     """
  
@@ -346,4 +367,3 @@ def raport_przychody_miesieczne(rok: int = 2026, db: Session = Depends(get_sessi
  
     wyniki = db.execute(zapytanie, {"rok": rok}).mappings().all()
     return wyniki
-

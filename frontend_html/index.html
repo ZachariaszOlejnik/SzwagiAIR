@@ -99,11 +99,10 @@
     </div>
  
     <script>
-      // wysyłanie danych logowania do backendu i obsługa odpowiedzi
       document
         .getElementById("loginForm")
         .addEventListener("submit", async function (event) {
-          event.preventDefault(); // zapobiega przeładowaniu strony
+          event.preventDefault();
  
           const loginValue = document.getElementById("login").value;
           const hasloValue = document.getElementById("haslo").value;
@@ -113,38 +112,42 @@
           komunikatDiv.innerText = "Logowanie...";
  
           try {
+            // JWT/OAuth2 wymaga danych jako form-data (application/x-www-form-urlencoded),
+            // NIE jako JSON. Pola muszą nazywać się 'username' i 'password'.
+            const formData = new URLSearchParams();
+            formData.append("username", loginValue);
+            formData.append("password", hasloValue);
+ 
             const response = await fetch(
               "http://127.0.0.1:8000/autoryzacja/login",
               {
                 method: "POST",
                 headers: {
-                  "Content-Type": "application/json",
+                  "Content-Type": "application/x-www-form-urlencoded",
                 },
-                body: JSON.stringify({
-                  login: loginValue,
-                  haslo: hasloValue,
-                }),
+                body: formData,
               },
             );
  
             const data = await response.json();
  
             if (response.ok) {
-  		komunikatDiv.style.color = "green";
-  		komunikatDiv.innerText = "Zalogowano pomyślnie! Witamy " + data.login;
+              komunikatDiv.style.color = "green";
+              komunikatDiv.innerText = "Zalogowano pomyślnie! Witamy " + data.login;
  
-              // zapisujemy sesję w localStorage - inne strony moga sprawdzić czy ktoś jest zalogowany
-             	localStorage.setItem("login", data.login);
-  		localStorage.setItem("rola", data.rola);
+              // zapisujemy TOKEN + dane sesji w localStorage
+              localStorage.setItem("token", data.access_token);
+              localStorage.setItem("login", data.login);
+              localStorage.setItem("rola", data.rola);
  
-              // tutaj można przekierować użytkownika do innej strony np.:
+              // przekierowanie zależne od roli
               setTimeout(() => {
-    		if (data.rola === "admin") {
-      			window.location.href = "admin.html";
-    		} else {
-      			window.location.href = "wyszukiwarka.html";
-    		}
-  	    }, 1000);
+                if (data.rola === "admin") {
+                  window.location.href = "admin.html";
+                } else {
+                  window.location.href = "wyszukiwarka.html";
+                }
+              }, 1000);
             } else {
               komunikatDiv.style.color = "red";
               komunikatDiv.innerText = "Błąd: " + data.detail;

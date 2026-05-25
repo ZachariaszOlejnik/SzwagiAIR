@@ -2,146 +2,163 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from database import get_session
+from auth_utils import wymagaj_admina
 import models
 import schemas
-
+ 
 # router pozwala na grupowanie endpointów (np. wszystkie operacje na lotach) w jednym miejscu, a potem podpinamy je do głównej aplikacji FastAPI w main.py
 router = APIRouter(
     prefix="/operacje",
     tags=["Moduł operacyjny (Loty, Samoloty, Lotniska)"]
-) 
-
-# schemat działania:
-# 1. zamiana: @app.get na @router.get, endpointy przeniesione do operacje.py
-# 2. dodanie: @router.get("/lotniska", response_model = List[schemas.LotniskoResponse])
-# 3. metody POST: zamiana obiektu Pydantic na SQLAlchemy(models) --> **obiekt.model_dump().
-# 4. zwracamy czysty obiekt np. return nowe_lotnisko
-# 5. podpięcie routera do main.py:  app.include_router(operacje.router)
-
-
+)
+ 
+# ZASADA AUTORYZACJI W TYM MODULE:
+# - GET (przeglądanie) -> publiczne, bez tokenu
+# - POST/DELETE (zmiany w siatce lotów, flocie, załodze) -> tylko ADMIN
+#   realizowane przez Depends(wymagaj_admina) na końcu listy parametrów
+ 
+ 
 # --- LOTNISKA ---
-@router.get("/lotniska", response_model = list[schemas.LotniskoResponse])           
+@router.get("/lotniska", response_model = list[schemas.LotniskoResponse])
 def pobierz_lotniska(db: Session = Depends(get_session)):
     """Zwraca listę wszystkich lotnisk w bazie."""
     return db.query(models.Lotnisko).all()
-
+ 
 @router.post("/lotniska", response_model=schemas.LotniskoResponse)
-def dodaj_lotnisko(lotnisko: schemas.LotniskoCreate, db: Session = Depends(get_session)):
+def dodaj_lotnisko(
+    lotnisko: schemas.LotniskoCreate,
+    db: Session = Depends(get_session),
+    admin = Depends(wymagaj_admina),
+):
     nowe_lotnisko = models.Lotnisko(**lotnisko.model_dump()) # zamiana Pydantic -> SQLAlchemy
     db.add(nowe_lotnisko)
     db.commit()  # fizyczne zapisanie do bazy PostgreSQL
     db.refresh(nowe_lotnisko) # Pobiera ID nadane przez bazę
-
+ 
     # zwracamy sam obiekt, LotniskoResponse zrobi konwersję SQLAlchemy -> Pydantic -> JSON dla klienta
     return nowe_lotnisko
-
-
+ 
+ 
 # --- SAMOLOTY ---
 @router.get("/samoloty", response_model = list[schemas.SamolotResponse])
 def pobierz_samoloty(db: Session = Depends(get_session)):
     """Zwraca listę wszystkich samolotów w bazie."""
     return db.query(models.Samolot).all()
-
+ 
 @router.post("/samoloty", response_model=schemas.SamolotResponse)
-def dodaj_samolot(samolot: schemas.SamolotCreate, db: Session = Depends(get_session)):
+def dodaj_samolot(
+    samolot: schemas.SamolotCreate,
+    db: Session = Depends(get_session),
+    admin = Depends(wymagaj_admina),
+):
     """Dodaje nowy samolot do bazy danych."""
     nowy_samolot = models.Samolot(**samolot.model_dump())
     db.add(nowy_samolot)
-    db.commit()  
-    db.refresh(nowy_samolot) 
-
+    db.commit()
+    db.refresh(nowy_samolot)
+ 
     return nowy_samolot
-
-
+ 
+ 
 # --- LOTY ---
 @router.get("/loty", response_model = list[schemas.LotResponse])
 def pobierz_loty(db: Session = Depends(get_session)):
     """Zwraca listę wszystkich lotów w bazie."""
     return db.query(models.Loty).all()
-
+ 
 @router.post("/loty", response_model=schemas.LotResponse)
-def dodaj_lot(lot: schemas.LotCreate, db: Session = Depends(get_session)):
+def dodaj_lot(
+    lot: schemas.LotCreate,
+    db: Session = Depends(get_session),
+    admin = Depends(wymagaj_admina),
+):
     """Tworzy nowy lot w bazie danych. Podajemy ID samolotu, ID lotniska"""
     nowy_lot = models.Loty(**lot.model_dump())
     db.add(nowy_lot)
-    db.commit()  
-    db.refresh(nowy_lot) 
-
+    db.commit()
+    db.refresh(nowy_lot)
+ 
     return nowy_lot
-
-
+ 
+ 
 # --- PRACOWNICY ---
 @router.get("/pracownicy", response_model = list[schemas.PracownikResponse])
 def pobierz_pracownikow(db: Session = Depends(get_session)):
     """Zwraca listę wszystkich pracownków w bazie."""
     return db.query(models.Pracownik).all()
-
+ 
 @router.post("/pracownicy", response_model=schemas.PracownikResponse)
-def dodaj_pracownika(pracownik: schemas.PracownikCreate, db: Session = Depends(get_session)):
+def dodaj_pracownika(
+    pracownik: schemas.PracownikCreate,
+    db: Session = Depends(get_session),
+    admin = Depends(wymagaj_admina),
+):
     """Dodaje nowego pracownika do bazy danych."""
     nowy_pracownik = models.Pracownik(**pracownik.model_dump())
     db.add(nowy_pracownik)
     db.commit()
     db.refresh(nowy_pracownik)
     return nowy_pracownik
-
-
+ 
+ 
 # --- HARMONOGRAM ZAŁOGI ---
 @router.get("/harmonogram", response_model = list[schemas.HarmonogramZalogiResponse])
 def pobierz_harmonogram(db: Session = Depends(get_session)):
     """Zwraca listę wszystkich wpisów w harmonogramie załogi."""
     return db.query(models.HarmonogramZalogi).all()
-
+ 
 @router.post("/harmonogram", response_model=schemas.HarmonogramZalogiResponse)
-def dodaj_wpis_harmonogramu(wpis: schemas.HarmonogramZalogiCreate, db: Session = Depends(get_session)):
+def dodaj_wpis_harmonogramu(
+    wpis: schemas.HarmonogramZalogiCreate,
+    db: Session = Depends(get_session),
+    admin = Depends(wymagaj_admina),
+):
     """Dodaje nowy wpis do harmonogramu załogi."""
     nowy_wpis = models.HarmonogramZalogi(**wpis.model_dump())
     db.add(nowy_wpis)
     db.commit()
     db.refresh(nowy_wpis)
     return nowy_wpis
-
-
+ 
+ 
 @router.delete("/harmonogram")
 def usun_wpis_harmonogramu(
     id_lotu: int,
     id_pracownika: int,
-    db: Session = Depends(get_session)
+    db: Session = Depends(get_session),
+    admin = Depends(wymagaj_admina),
 ):
     """Usuwa pracownika z harmonogramu danego lotu."""
-
+ 
     wpis = db.query(models.HarmonogramZalogi).filter(
         models.HarmonogramZalogi.id_lotu == id_lotu,
         models.HarmonogramZalogi.id_pracownika == id_pracownika
     ).first()
-
+ 
     if wpis:
         db.delete(wpis)
         db.commit()
-        return {"status": "sukces", "widomosc": "Pracownik usunięty z lotu"}
+        return {"status": "sukces", "wiadomosc": "Pracownik usunięty z lotu"}
+ 
     
-    raise HTTPException(ststus_code=404, deatil="Nie znaleziono takiego przypisania")
-
-
-
-
-
-
-
+    raise HTTPException(status_code=404, detail="Nie znaleziono takiego przypisania")
+ 
+ 
 ####################################################
 # --- RAPORTY (RAW SQL) ---
 ####################################################
-
-# POMIĘTAĆ O WCIĘCIACH, BO NIE ZADZIAŁA!
-
-
-
+# Raporty zostają PUBLICZNE (GET) - służą do przeglądania/wyszukiwania.
+# Jeśli chcecie je schować za adminem, dodajcie Depends(wymagaj_admina).
+ 
+# PAMIĘTAĆ O WCIĘCIACH, BO NIE ZADZIAŁA!
+ 
+ 
 ### --- SZCZEGÓŁY LOTÓW (RAW SQL) --- ###
-
+ 
 @router.get("/raporty/szczegoly-lotow")
 def raport_szczegolowy_lotow(db: Session = Depends(get_session)):
     """Pobranie szczegółowego raportu lotów (RAW SQL) wraz z kodami IATA i miastami."""
-
+ 
     zapytanie = text("""
         SELECT
             l.numer_lotu,
@@ -158,18 +175,17 @@ def raport_szczegolowy_lotow(db: Session = Depends(get_session)):
         JOIN lotniska wylot ON l.id_lotniska_wylotu = wylot.id
         JOIN lotniska przylot ON l.id_lotniska_przylotu = przylot.id
     """)
-
-# .mappings() - zamiana wyniku zapytania sql na słownik, który FastAPI może zwrócić jako JSON 
+ 
+    # .mappings() - zamiana wyniku zapytania sql na słownik, który FastAPI może zwrócić jako JSON
     wyniki = db.execute(zapytanie).mappings().all()
     return wyniki
-
-
-
+ 
+ 
 ### --- PRZESIADKI (RAW SQL) --- ###
 @router.get("/loty/przesiadki")
-def szukaj_lotow_z_przesiadkami(skad:str, dokad:str, db: Session = Depends(get_session)):
+def szukaj_lotow_z_przesiadkami(skad: str, dokad: str, db: Session = Depends(get_session)):
     """Zaawansowane wyszukiwanie lotów z przesiadkami na podstawie kodów IATA"""
-
+ 
     zapytanie = text("""
     SELECT
         l1.numer_lotu AS pierwszy_lot,
@@ -188,23 +204,13 @@ def szukaj_lotow_z_przesiadkami(skad:str, dokad:str, db: Session = Depends(get_s
     AND cel_lotnisko.kod = :param_dokad
     AND l2.czas_wylotu > l1.czas_przylotu
     """)
-    
-    # .mappings():
-    # WAW-NYC-01", 1, 3, "NYC-LAX-02", 4 -----> {"pierwszy_lot": "WAW-NYC-01", "lotnisko_start": 1, ...}
-
-    wyniki = db.execute(zapytanie, {"param_skad":skad.upper(), "param_dokad":dokad.upper()}).mappings().all()
-    
-    # konwersja listy obiektów RowMapping na standardowe słowniki Pythona (dict) - był błąd
-    # return wyniki
+ 
+    wyniki = db.execute(zapytanie, {"param_skad": skad.upper(), "param_dokad": dokad.upper()}).mappings().all()
+ 
+    # konwersja listy obiektów RowMapping na standardowe słowniki Pythona (dict)
     return [dict(w) for w in wyniki]
-
-
-
-
-
-
+ 
+ 
 # POMYSŁY:
 # - Statystyki lotnisk: Zlicza, ile lotów startuje z każdego lotniska
-# - Procentowe obłożenie: Oblicza, ile procent miejsc w samolocie zostało już wykupionych na dany lot, bazując na pojemnosc_max z tabeli samolotów i wolne_miejsca z tabeli lotów.
-
-
+# - Procentowe obłożenie: Oblicza, ile procent miejsc w samolocie zostało już wykupionych na dany lot.
