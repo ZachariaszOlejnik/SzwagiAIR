@@ -10,6 +10,8 @@ let pobraneLoty = [];
 let wybraneIdPracownikow = [];
 let aktualnyIdLotu = null;
 
+let poczatkoweIdPracownikow = []; // dla usuwania z harmonogramu
+
 const slownikLotnisk = {
   1: "WAW",
   2: "KRK",
@@ -253,6 +255,9 @@ async function pobierzPracownikow() {
       .filter((wpis) => wpis.id_lotu === aktualnyIdLotu)
       .map((wpis) => wpis.id_pracownika);
 
+    // DODATKOWO: Zapis stanu początkowego (kopia) do porównania przy zapisie (dla delete)
+    poczatkoweIdPracownikow = [...wybraneIdPracownikow];
+
     const kontenerPilotow = document.getElementById("lista-pilotow");
     const kontenerPersonelu = document.getElementById("lista-personelu");
 
@@ -322,13 +327,29 @@ function aktualizujLiczniki() {
 }
 
 async function zapiszZaloge() {
-  if (wybraneIdPracownikow.length === 0) {
-    alert("Wybierz przynajmniej jednego pracownika!");
-    return;
-  }
-
   try {
-    for (const idPrac of wybraneIdPracownikow) {
+    // kogo dodać a kogo usunać - 'doDodania' i 'DoUsuniecia'
+    const doDodania = wybraneIdPracownikow.filter(
+      (id) => !poczatkoweIdPracownikow.includes(id),
+    );
+
+    const doUsuniecia = poczatkoweIdPracownikow.filter(
+      (id) => !wybraneIdPracownikow.includes(id),
+    );
+
+    // wysłanie zapytania delete dla odznaczonych pracowników
+    for (const idPrac of doUsuniecia) {
+      // query params w URL przekazują backendowi - który lot i pracownika usunąć
+      await fetch(
+        `http://127.0.0.1:8000/operacje/harmonogram?id_lotu=${aktualnyIdLotu}&id_pracownika=${idPrac}`,
+        {
+          method: "DELETE",
+        },
+      );
+    }
+
+    // wysyłanie zapytania POST dla nowo oznaczonych pracowników
+    for (const idPrac of doDodania) {
       const payload = {
         id_lotu: aktualnyIdLotu,
         id_pracownika: idPrac,
@@ -341,7 +362,7 @@ async function zapiszZaloge() {
       });
     }
 
-    alert("✅ Załoga została pomyślnie przypisana do tego lotu!");
+    alert("✅ Załoga została pomyślnie zaktualizowana!");
     zmienWidok("dashboard");
   } catch (error) {
     console.error("Błąd zapisu:", error);
