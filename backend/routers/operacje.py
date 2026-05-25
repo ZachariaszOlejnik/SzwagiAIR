@@ -102,6 +102,28 @@ def dodaj_wpis_harmonogramu(wpis: schemas.HarmonogramZalogiCreate, db: Session =
     return nowy_wpis
 
 
+@router.delete("/harmonogram")
+def usun_wpis_harmonogramu(
+    id_lotu: int,
+    id_pracownika: int,
+    db: Session = Depends(get_session)
+):
+    """Usuwa pracownika z harmonogramu danego lotu."""
+
+    wpis = db.query(models.HarmonogramZalogi).filter(
+        models.HarmonogramZalogi.id_lotu == id_lotu,
+        models.HarmonogramZalogi.id_pracownika == id_pracownika
+    ).first()
+
+    if wpis:
+        db.delete(wpis)
+        db.commit()
+        return {"status": "sukces", "widomosc": "Pracownik usunięty z lotu"}
+    
+    raise HTTPException(ststus_code=404, deatil="Nie znaleziono takiego przypisania")
+
+
+
 
 
 
