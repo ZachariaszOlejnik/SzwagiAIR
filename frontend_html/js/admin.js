@@ -375,3 +375,21 @@ async function zapiszZaloge() {
 // \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
 window.onload = pobierzloty;
+
+// \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+// VII. WYLOGOWYWANIE
+// \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
+function wyloguj() {
+  const czyNapewno = confirm(
+    "Czy na pewno chcesz się wylogować z panelu administratora?",
+  );
+
+  if (czyNapewno) {
+    // localStorage.removeItem("token");
+    // sessionStorage.clear();
+
+    // przekierowanie na stronę główną:
+    window.location.href = "index.html";
+  }
+}
