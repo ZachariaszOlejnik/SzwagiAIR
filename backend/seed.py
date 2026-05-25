@@ -300,6 +300,34 @@ def dodaj_konta(db, pasazer_ids):
     print(f"  Dodano {len(pasazerowie)} kont pasażerów + 1 konto admina.")
 
 
+
+# DANE PRACOWNIKÓW (ZAŁOGA)
+def dodaj_pracowników(db):
+    print("Dodaję załogę (pracowników)...")
+    dane = [
+        ("Jan", "Kolas", "Kapitan", "PL-ATP-10231"),
+        ("Anna", "Nowak", "Pierwszy Oficer", "PL-CPL-88776"),
+        ("Michał", "Krawczyk", "Kapitan", "PL-ATP-55555"),
+        ("Ewa", "Wiśniewska", "Szefowa Pokładu", "CC-112233"),
+        ("Piotr", "Zieliński", "Steward", "CC-998877"),
+        ("Katarzyna", "Bąk", "Stewardesa", "CC-444333"),
+        ("Tomasz", "Lis", "Pierwszy Oficer", "PL-CPL-11122"),
+        ("Agnieszka", "Kowal", "Stewardesa", "CC-555666"),
+    ]
+
+    pracownicy = []
+    for imie, nazwisko, stan, lic in dane:
+        p = models.Pracownik(imie=imie, nazwisko=nazwisko, stanowisko=stan, numer_licencji=lic)
+        db.add(p)
+        pracownicy.append(p)
+
+    db.commit()
+    print(f" Dodano {len(pracownicy)} pracowników załogi.")
+    return pracownicy
+
+
+
+
 def dodaj_rezerwacje(db, pasazer_ids, mapa_lotow, uslugi):
     """
     Tworzy kilkanaście rezerwacji - większość OPŁACONYCH (do raportów),
@@ -405,6 +433,9 @@ def main():
         pasazer_ids = dodaj_pasazerow(db)
         dodaj_konta(db, pasazer_ids)
         dodaj_rezerwacje(db, pasazer_ids, mapa_lotow, uslugi)
+
+        dodaj_pracowników(db)
+
 
         print("=" * 60)
         print("  SUKCES! Baza wypełniona danymi demonstracyjnymi.")
