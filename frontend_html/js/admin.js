@@ -1,7 +1,35 @@
+// \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+// I. ZMIENNE GLOBALNE
+// \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
 // krok 1. Podłączenie URL backendu
 const API_URL = "http://127.0.0.1:8000/operacje/loty";
 
-// krok 2: funkcja asynchroniczna pobierająca dane
+// Zmienne do sekcji 'Zarządzanie załogą'
+let pobraneLoty = [];
+let wybraneIdPracownikow = [];
+let aktualnyIdLotu = null;
+
+const slownikLotnisk = {
+  1: "WAW",
+  2: "KRK",
+  3: "GDN",
+  4: "WRO",
+  5: "POZ",
+  6: "KTW",
+  7: "LHR",
+  8: "CDG",
+  9: "FRA",
+  10: "AMS",
+  33: "JFK",
+  34: "LAX",
+  41: "DBX",
+};
+
+// \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+// II. DASHBOARD - POBIERANIE I WYŚWIETLANIE LOTÓW
+// \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
 // async/await dlatego, że zapytanie do bazy (fetch) trwa chwilę i przeglądarka czeka
 async function pobierzloty() {
   try {
@@ -11,9 +39,11 @@ async function pobierzloty() {
     // RAW na obiekt JSON:
     const loty = await odpowiedz.json();
 
-    const tabela = document.getElementById("tabela-lotow");
+    // zapis do zminnej globalnej (potrzbne do załogi)
+    pobraneLoty = loty;
 
-    tabela.innerHTML = ""; // krok 3: Wyczyszczenie napisu ładowania
+    const tabela = document.getElementById("tabela-lotow");
+    tabela.innerHTML = ""; //Wyczyszczenie napisu ładowania
 
     ////////// 1. ZLICZANIE WSZYSTKICH LOTÓW ///////////////////
 
@@ -98,6 +128,10 @@ async function pobierzloty() {
   }
 }
 
+// \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+// III. PRZEŁĄCZANIE WIDOKÓW
+// \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
 // FUNKCJA PRZEŁĄCZAJĄCA WIDOKI (Single page Application) /////////////////////
 function zmienWidok(idWidoku) {
   // wszytsko najpierw ukryte
@@ -109,16 +143,9 @@ function zmienWidok(idWidoku) {
   document.getElementById(idWidoku).classList.remove("ukryty");
 }
 
-// OBSŁUGA KLIKNIĘCIA W TABELI
-function otworzZaloge(idLotu, numer_lotu) {
-  document.getElementById("tytul-zalogi").innerHTML =
-    "Zarządzanie załogą (Lot: " + numer_lotu + ")";
-
-  // przełączenie widoku
-  zmienWidok("zaloga");
-}
-
-///////////// FUNKCJE JS DLA MODALA I WYSYŁANIA POST: /////////////
+// \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+// IV. NOWY LOT (MODAL)
+// \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
 function otworzModal() {
   document.getElementById("modal-dodaj").classList.remove("ukryty");
@@ -171,5 +198,159 @@ async function dodajLot(event) {
   }
 }
 
-// automatyczne uruchomienie pobierania lotów po otwarciu strony
+// \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+// V. ZARZĄDZANIE ZAŁOGĄ
+// \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
+// OBSŁUGA KLIKNIĘCIA W TABELI
+async function otworzZaloge(idLotu) {
+  aktualnyIdLotu = idLotu;
+  wybraneIdPracownikow = [];
+  zmienWidok("zaloga");
+
+  // szczegóły wybranego lotu z pobranej listy
+  const lot = pobraneLoty.find((l) => l.id === idLotu);
+  if (!lot) return;
+
+  document.getElementById("zaloga-numer-lotu").innerText = lot.numer_lotu;
+  document.getElementById("zaloga-samolot").innerText =
+    `ID Samolotu: ${lot.id_samolotu}`;
+
+  const dataObj = new Date(lot.czas_wylotu);
+  document.getElementById("zaloga-data").innerHTML = dataObj.toLocaleDateString(
+    "pl-PL",
+    { day: "numeric", month: "long", year: "numeric" },
+  );
+
+  document.getElementById("zaloga-wylot-kod").innerText =
+    slownikLotnisk[lot.id_lotniska_wylotu] || `L-${lot.id_lotniska_wylotu}`;
+  document.getElementById("zaloga-wylot-id").innerText =
+    `ID: ${lot.id_lotniska_wylotu}`;
+  document.getElementById("zaloga-przylot-kod").innerText =
+    slownikLotnisk[lot.id_lotniska_przylotu] || `L-${lot.id_lotniska_przylotu}`;
+  document.getElementById("zaloga-przylot-id").innerText =
+    `ID: ${lot.id_lotniska_przylotu}`;
+
+  await pobierzPracownikow();
+}
+
+async function pobierzPracownikow() {
+  try {
+    // 1. Pobieranie wszystkich poracowników
+    const odpPracownicy = await fetch(
+      "http://127.0.0.1:8000/operacje/pracownicy",
+    );
+    const pracownicy = await odpPracownicy.json();
+
+    // 2. Pobieranie harmonogramu
+    const odpHarmonogram = await fetch(
+      "http://127.0.0.1:8000/operacje/harmonogram",
+    );
+    const harmonogram = await odpHarmonogram.json();
+
+    // 3. Filtrowanie harmonogreamu tylko dla aktualnego lotu
+    wybraneIdPracownikow = harmonogram
+      .filter((wpis) => wpis.id_lotu === aktualnyIdLotu)
+      .map((wpis) => wpis.id_pracownika);
+
+    const kontenerPilotow = document.getElementById("lista-pilotow");
+    const kontenerPersonelu = document.getElementById("lista-personelu");
+
+    kontenerPilotow.innerHTML = "";
+    kontenerPersonelu.innerHTML = "";
+
+    pracownicy.forEach((p) => {
+      const inicjaly =
+        p.imie.charAt(0).toUpperCase() + p.nazwisko.charAt(0).toUpperCase();
+      const toPilot =
+        p.stanowisko.toLowerCase().includes("kapitan") ||
+        p.stanowisko.toLowerCase().includes("oficer");
+
+      // 4. Jeżeli ID pracownika jest w tabeli wybranych dosatje klasę 'wybrany'
+      const czyWybrany = wybraneIdPracownikow.includes(p.id) ? "wybrany" : "";
+
+      const kartaHTML = `
+      <div class="pracownik-karta ${czyWybrany}" id="pracownik-${p.id}" onclick="zaznaczPracownika(${p.id})">
+      <div class="inicjaly">${inicjaly}</div>
+      <div class="pracownik-dane">
+        <strong>${p.imie} ${p.nazwisko}</strong>
+        <small>${p.stanowisko} • ${p.numer_licencji}</small> 
+      </div>
+      <div class="ikona-check"></div>
+      </div>
+      `;
+
+      if (toPilot) kontenerPilotow.innerHTML += kartaHTML;
+      else kontenerPersonelu.innerHTML += kartaHTML;
+    });
+
+    aktualizujLiczniki();
+  } catch (error) {
+    console.error("Błąd ładowania pracowników:", error);
+  }
+}
+
+function zaznaczPracownika(idPracownika) {
+  const element = document.getElementById(`pracownik-${idPracownika}`);
+
+  if (wybraneIdPracownikow.includes(idPracownika)) {
+    wybraneIdPracownikow = wybraneIdPracownikow.filter(
+      (id) => id !== idPracownika,
+    );
+    element.classList.remove("wybrany");
+  } else {
+    wybraneIdPracownikow.push(idPracownika);
+    element.classList.add("wybrany");
+  }
+
+  aktualizujLiczniki();
+}
+
+function aktualizujLiczniki() {
+  const wybraniPiloci = document.querySelectorAll(
+    "#lista-pilotow .pracownik-karta.wybrany",
+  ).length;
+
+  const wybranyPersonel = document.querySelectorAll(
+    "#lista-personelu .pracownik-karta.wybrany",
+  ).length;
+
+  document.getElementById("licznik-pilotow").innerHTML =
+    `Wybrano: ${wybraniPiloci}`;
+  document.getElementById("licznik-personelu").innerText =
+    `Wybrano: ${wybranyPersonel}`;
+}
+
+async function zapiszZaloge() {
+  if (wybraneIdPracownikow.length === 0) {
+    alert("Wybierz przynajmniej jednego pracownika!");
+    return;
+  }
+
+  try {
+    for (const idPrac of wybraneIdPracownikow) {
+      const payload = {
+        id_lotu: aktualnyIdLotu,
+        id_pracownika: idPrac,
+      };
+
+      await fetch("http://127.0.0.1:8000/operacje/harmonogram", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+    }
+
+    alert("✅ Załoga została pomyślnie przypisana do tego lotu!");
+    zmienWidok("dashboard");
+  } catch (error) {
+    console.error("Błąd zapisu:", error);
+    alert("❌ Wystąpił błąd podczas zapisywania załogi.");
+  }
+}
+
+// \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+// VI. START - automatyczne uruchomienie pobierania lotów po otwarciu strony
+// \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
 window.onload = pobierzloty;
