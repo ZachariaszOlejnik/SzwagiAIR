@@ -167,6 +167,7 @@ tr:hover {
 .progress-fill {
   height: 100%;
   border-radius: 10px;
+  /* display: block; */
 }
 
 /* ZAŁOGA (CHECKBOXY) */
@@ -260,4 +261,188 @@ tr:hover {
   border-radius: 6px;
   font-weight: bold;
   cursor: pointer;
+}
+
+/* ZARZĄDZANIE ZAŁOGĄ (FIGMA) */
+.btn-powrot {
+  background: none;
+  border: none;
+  color: #7f8c8d;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  padding: 0;
+  margin-bottom: 5px;
+}
+
+.btn-powrot:hover {
+  color: #34495e;
+  text-decoration: underline;
+}
+
+/* karta lotu */
+.lot-info-card {
+  background-color: #0f2038;
+  color: white;
+  border-radius: 12px;
+  padding: 25px;
+  margin-bottom: 30px;
+}
+
+.lot-info-top {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.ikona-samolotu {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 20px;
+}
+
+.lot-info-trasa {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.miasto-kod h1 {
+  margin: 0;
+  font-size: 36px;
+  color: #fff;
+  letter-spacing: 2px;
+}
+.miasto-kod small {
+  color: #3498db;
+  font-weight: bold;
+}
+
+.trasa-linia {
+  flex: 1;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.2);
+  margin: 0 30px;
+  position: relative;
+}
+
+.kolumna-naglowek {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 20px;
+  background: white;
+  padding: 15px;
+  border-radius: 10px;
+  border: 1px solid #eaeaea;
+}
+
+/* nagłówki kolumn załogi */
+.kolumna-naglowek h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #2c3e50;
+}
+.ikona-kolumny {
+  background: #fff8e1;
+  font-size: 20px;
+  padding: 10px;
+  border-radius: 50%;
+}
+
+/* lista pracowników i interaktywne karty */
+.pracownicy-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.pracownik-karta {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: white;
+  padding: 15px;
+  border-radius: 10px;
+  border: 2px solid #eaeaea;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.pracownik-karta:hover {
+  border-color: #bdc3c7;
+}
+
+/* gdy karta jest ZAZNACZONA: */
+.pracownik-karta.wybrany {
+  border-color: #3498db;
+  background-color: #f4fafe;
+}
+.pracownik-karta.wybrany strong {
+  color: #3498db;
+}
+
+/* kołko z inicjałąmi */
+.incjaly {
+  width: 45px;
+  height: 45px;
+  background: #ecf0f1;
+  color: #7f8c8d;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  font-size: 16px;
+  transition: 0.2s;
+}
+.pracownik-karta.wybrany .inicjaly {
+  background: #3498db;
+  color: white;
+}
+
+.pracownik-dane {
+  flex: 1;
+}
+
+.pracownik-dane strong {
+  display: block;
+  color: #2c3e50;
+  font-size: 15px;
+  transition: 0.2s;
+}
+
+.pracownik-dane small {
+  color: #95a5a6;
+  display: block;
+  font-size: 12px;
+  margin-top: 3px;
+}
+
+/* checkbox */
+.ikona-chceck {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid #ddd;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+}
+
+.pracownik-karta.wybrany .ikona-check {
+  background-color: #3498db;
+  border-color: #3498db;
+}
+
+.ikona-check::after {
+  content: "✔";
+  font-size: 12px;
+  display: none;
+}
+
+.pracownik-karta .ikona-chceck::after {
+  display: block;
 }

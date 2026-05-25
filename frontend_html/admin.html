@@ -21,7 +21,9 @@
     </div>
 
     <div class="main-content">
+      <!-- /////////////////////// -->
       <!-- SEKCJA DASHBOARD -->
+      <!-- /////////////////////// -->
       <section id="dashboard">
         <div class="header-top">
           <div>
@@ -74,39 +76,88 @@
         </table>
       </section>
 
+      <!-- //////////////////// -->
       <!-- SEKCJA ZAŁOGI -->
+      <!-- //////////////////// -->
       <section id="zaloga" class="ukryty">
-        <div class="header-top">
+        <button class="btn-powrot" onclick="zmienWidok('dashboard')">
+          &lt; Powrót do siatki lotów
+        </button>
+        <div class="header-top" style="margin-top: 10px">
           <div>
-            <h2 id="tytul-zalogi">Zarządzanie załogą</h2>
+            <h2>Zarządzanie załogą</h2>
             <p>Przypisz pilotów i stewardesy do rejsu</p>
           </div>
-          <button class="btn-akcja">Zapisz zmiany w bazie</button>
+          <button class="btn-akcja" onclick="zapiszZaloge()">
+            Zapisz zmiany w bazie
+          </button>
+        </div>
+
+        <div class="lot-info-card">
+          <div class="lot-info-top">
+            <div class="ikona-samolotu">✈️</div>
+            <div>
+              <strong
+                id="zaloga-numer-lotu"
+                style="font-size: 18px; color: #3498db"
+                >SA 301</strong
+              ><br />
+              <small id="zaloga-samolot" style="color: #bdc3c7"
+                >Boeing 787-9</small
+              >
+            </div>
+            <div style="margin-left: auto; text-align: right">
+              <small style="color: #bdc3c7">Data wylotu</small><br />
+              <strong id="zaloga-data" style="font-size: 16px"
+                >20 kwietnia 2026</strong
+              >
+            </div>
+          </div>
+          <div class="lot-info-trasa">
+            <div class="miasto-kod">
+              <h1 id="zaloga-wylot-kod">WAW</h1>
+              <small id="zaloga-wylot-id">ID Lotniska: 1</small>
+            </div>
+            <div class="trasa-linia"></div>
+            <div class="miasto-kod" style="text-align: right">
+              <h1 id="zaloga-przylot-kod">JFK</h1>
+              <small id="zaloga-przylot-id">ID Lotniska: 33</small>
+            </div>
+          </div>
         </div>
 
         <div class="zaloga-kontener">
           <div class="zaloga-kolumna">
-            <h3>Piloci</h3>
-            <div class="pracownik-item">
-              <label>Kpt. Jan Kowalski (ID: 1)</label>
-              <input type="checkbox" checked />
+            <div class="kolumna-naglowek">
+              <div class="ikona-kolumny">⭐</div>
+              <div>
+                <h3>Piloci</h3>
+                <small id="licznik-pilotow" style="color: #7f8c8d"
+                  >Wybrano: 0</small
+                >
+              </div>
             </div>
-            <div class="pracownik-item">
-              <label>F/O Maria Nowak (ID:2)</label>
-              <input type="checkbox" checked />
-            </div>
+            <div id="lista-pilotow" class="pracownicy-lista"></div>
           </div>
+
           <div class="zaloga-kolumna">
-            <h3>Personel Pokładowy</h3>
-            <div class="pracownik-item">
-              <label>Anna Kowalczyk (ID: 3)</label>
-              <input type="checkbox" checked />
+            <div class="kolumna-naglowek">
+              <div class="ikona-kolumny">👩‍✈️</div>
             </div>
+            <div>
+              <h3>Personel pokładowy</h3>
+              <small id="licznik-personelu" style="color: #7f8c8d"
+                >Wybrano: 0</small
+              >
+            </div>
+            <div id="lista-personelu" class="pracownicy-lista"></div>
           </div>
         </div>
       </section>
 
+      <!-- /////////////////////////// -->
       <!-- SEKCJA KATALOG USŁUG -->
+      <!-- /////////////////////////// -->
       <section id="katalog" class="ukryty">
         <div class="header-top">
           <div>
@@ -190,6 +241,6 @@
       </div>
     </div>
 
-    <script src="js/app.js"></script>
+    <script src="js/admin.js"></script>
   </body>
 </html>

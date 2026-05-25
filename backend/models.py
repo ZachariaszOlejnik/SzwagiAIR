@@ -70,7 +70,6 @@ class HarmonogramZalogi(Base):
 
 
 
-
  # relacje do wyciągania obiektów z tabel: "Loty" oraz "Pracownik"
     lot: Mapped["Loty"] = relationship()
     pracownik: Mapped["Pracownik"] = relationship()
