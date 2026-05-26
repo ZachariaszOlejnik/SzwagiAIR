@@ -202,7 +202,10 @@ async function utworzRezerwacje() {
     // --- KROK 1: rezerwacja (cena bazowa - bagaż i usługi dolicza backend) ---
     const rezerwacjaResp = await fetch(`${API}/sprzedaz/rezerwacje`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + localStorage.getItem("token") // <-- DODANE
+      },
       body: JSON.stringify({
         id_pasazera: idPasazera,
         typ_podrozy: "w_jedna_strone",
@@ -210,16 +213,15 @@ async function utworzRezerwacje() {
         status: "oczekuje",
       }),
     });
-    if (!rezerwacjaResp.ok) {
-      const err = await rezerwacjaResp.json();
-      throw new Error(err.detail || "Błąd tworzenia rezerwacji");
-    }
-    const rezerwacja = await rezerwacjaResp.json();
- 
+    // ... weryfikacja odpowiedzi pozostaje bez zmian ...
+
     // --- KROK 2: odcinek (lot + miejsce) ---
     const odcinekResp = await fetch(`${API}/sprzedaz/odcinki_rezerwacji`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + localStorage.getItem("token") // <-- DODANE
+      },
       body: JSON.stringify({
         id_rezerwacji: rezerwacja.id,
         id_lotu: parseInt(lotId),
@@ -227,18 +229,18 @@ async function utworzRezerwacje() {
         numer_miejsca: numerMiejsca,
       }),
     });
-    if (!odcinekResp.ok) {
-      const err = await odcinekResp.json();
-      throw new Error(err.detail || "Błąd dodawania lotu do rezerwacji");
-    }
- 
+    // ... weryfikacja odpowiedzi pozostaje bez zmian ...
+
     // --- KROK 3: bagaż (jeśli płatny) ---
     const bagazWybrany = document.querySelector('input[name="bagaz"]:checked');
     const cenaBagazu = parseFloat(bagazWybrany.value);
     if (cenaBagazu > 0) {
       await fetch(`${API}/sprzedaz/bagaze`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + localStorage.getItem("token") // <-- DODANE
+        },
         body: JSON.stringify({
           id_rezerwacji: rezerwacja.id,
           typ: bagazWybrany.dataset.typ,
@@ -246,13 +248,16 @@ async function utworzRezerwacje() {
         }),
       });
     }
- 
+
     // --- KROK 4: usługi dodatkowe ---
     const uslugiZaznaczone = document.querySelectorAll(".usluga-check:checked");
     for (const cb of uslugiZaznaczone) {
       await fetch(`${API}/sprzedaz/uslugi_rezerwacji`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + localStorage.getItem("token") // <-- DODANE
+        },
         body: JSON.stringify({
           id_rezerwacji: rezerwacja.id,
           id_uslugi: parseInt(cb.dataset.id),

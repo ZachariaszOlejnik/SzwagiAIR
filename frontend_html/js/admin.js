@@ -181,19 +181,10 @@ async function dodajLot(event) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "Authorization": "Bearer " + localStorage.getItem("token") // <-- DODANE
       },
       body: JSON.stringify(daneLotu),
     });
-
-    if (odpowiedz.ok) {
-      alert("✅ Lot został pomyślnie dodany!");
-      zamknijModal();
-      pobierzloty();
-    } else {
-      alert(
-        "Błąd: Upewnij się, że dane są poprawne. ID lotnisk musza istnieć w bazie!",
-      );
-    }
   } catch (error) {
     console.error("Błąd sieci:", error);
     alert("❌ Błąd połączenia z serwerem.");
@@ -344,6 +335,9 @@ async function zapiszZaloge() {
         `http://127.0.0.1:8000/operacje/harmonogram?id_lotu=${aktualnyIdLotu}&id_pracownika=${idPrac}`,
         {
           method: "DELETE",
+          headers: {
+            "Authorization": "Bearer " + localStorage.getItem("token") // <-- DODANE
+          }
         },
       );
     }
@@ -357,11 +351,14 @@ async function zapiszZaloge() {
 
       await fetch("http://127.0.0.1:8000/operacje/harmonogram", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + localStorage.getItem("token") // <-- DODANE
+        },
         body: JSON.stringify(payload),
       });
     }
-
+    
     alert("✅ Załoga została pomyślnie zaktualizowana!");
     zmienWidok("dashboard");
   } catch (error) {
