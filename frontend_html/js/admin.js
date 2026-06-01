@@ -181,7 +181,7 @@ async function dodajLot(event) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": "Bearer " + localStorage.getItem("token") // <-- DODANE
+        Authorization: "Bearer " + localStorage.getItem("token"), // <-- DODANE
       },
       body: JSON.stringify(daneLotu),
     });
@@ -336,8 +336,8 @@ async function zapiszZaloge() {
         {
           method: "DELETE",
           headers: {
-            "Authorization": "Bearer " + localStorage.getItem("token") // <-- DODANE
-          }
+            Authorization: "Bearer " + localStorage.getItem("token"), // <-- DODANE
+          },
         },
       );
     }
@@ -351,14 +351,14 @@ async function zapiszZaloge() {
 
       await fetch("http://127.0.0.1:8000/operacje/harmonogram", {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
-          "Authorization": "Bearer " + localStorage.getItem("token") // <-- DODANE
+          Authorization: "Bearer " + localStorage.getItem("token"), // <-- DODANE
         },
         body: JSON.stringify(payload),
       });
     }
-    
+
     alert("✅ Załoga została pomyślnie zaktualizowana!");
     zmienWidok("dashboard");
   } catch (error) {
@@ -390,3 +390,5 @@ function wyloguj() {
     window.location.href = "index.html";
   }
 }
+
+///asd
