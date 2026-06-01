@@ -368,13 +368,86 @@ async function zapiszZaloge() {
 }
 
 // \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-// VI. START - automatyczne uruchomienie pobierania lotów po otwarciu strony
+// VI. KATALOG USŁUG
+// \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+const USLUGI_URL = "http://127.0.0.1:8000/sprzedaz/katalog_uslug";
+
+async function pobierzUslugi() {
+  try {
+    const odp = await fetch(USLUGI_URL);
+    const uslugi = await odp.json();
+    const tabela = document.getElementById("tabela-uslug");
+
+    tabela.innerHTML = "";
+
+    uslugi.forEach((u) => {
+      tabela.innerHTML += `
+      <tr>
+        <td>${u.id}</td>
+        <td>${u.nazwa_uslugi}</td>
+        <td>${u.cena_standardowa} PLN</td>
+      </tr>
+      `;
+    });
+  } catch (error) {
+    console.error("Błąd pobierania usług:", error);
+  }
+}
+
+function otworzModalUslugi() {
+  document.getElementById("modal-usluga").classList.remove("ukryty");
+}
+
+function zamknijModalUslugi() {
+  document.getElementById("modal-usluga").classList.add("ukryty");
+  document.getElementById("formularz-uslugi").reset();
+}
+
+async function dodajUsluge(event) {
+  event.preventDefault(); // zatrzymuje domyśle odświerzenie formulkarza po kliknięciu 'submit'
+
+  const payload = {
+    nazwa_uslugi: document.getElementById("nowa-nazwa-uslugi").value,
+    cena_standardowa: parseFloat(
+      document.getElementById("nowa-cena-uslugi").value,
+    ),
+  };
+
+  try {
+    const odp = await fetch(USLUGI_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + localStorage.getItem("token"),
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (odp.ok) {
+      zamknijModalUslugi();
+      pobierzUslugi(); // odswieżenie
+    } else {
+      alert("Błąd: Nie udało się zapisać usługi.");
+    }
+  } catch (error) {
+    console.error("Błąd sieci", error);
+    alert("❌ Brak połączenia z serwerem.");
+  }
+}
+
+// \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+// VII. START - INCJALIZACJA - automatyczne uruchomienie pobierania lotów i usług po otwarciu strony
 // \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
-window.onload = pobierzloty;
+async function incjalizuj() {
+  await pobierzloty();
+  await pobierzUslugi();
+}
+
+window.onload = incjalizuj;
 
 // \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-// VII. WYLOGOWYWANIE
+// VIII. WYLOGOWYWANIE
 // \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
 function wyloguj() {
@@ -390,5 +463,3 @@ function wyloguj() {
     window.location.href = "index.html";
   }
 }
-
-///asd
