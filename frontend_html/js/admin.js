@@ -436,18 +436,53 @@ async function dodajUsluge(event) {
 }
 
 // \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-// VII. START - INCJALIZACJA - automatyczne uruchomienie pobierania lotów i usług po otwarciu strony
+// VII. STATYSTYKI KAFELKI
+// \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+async function pobierzStatystyki() {
+  try {
+    // 1. Ilośc wsyztskich pasażerów
+    const odpPasazerowie = await fetch(
+      "http://127.0.0.1:8000/sprzedaz/pasazerowie",
+    );
+    const pasazerowie = await odpPasazerowie.json();
+    document.getElementById("stat-pasazerowie").innerText = pasazerowie.length;
+
+    // 2. Pobieranie sumy przychodów (raport SQL 2026)  --> ? query parametr
+    const odpPrzychody = await fetch(
+      "http://127.0.0.1:8000/sprzedaz/raporty/przychody-miesieczne?rok=2026",
+    );
+    const przychody = await odpPrzychody.json();
+
+    let sumaCalkowita = 0;
+    // raport dotyczy jednego miesiąca - foreach dla zsumowania
+    przychody.forEach((miesiac) => {
+      sumaCalkowita += parseFloat(miesiac.suma_przychodow);
+    });
+
+    document.getElementById("stat-przychod").innerText =
+      sumaCalkowita.toLocaleString("pl-PL", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }) + "PLN";
+  } catch (error) {
+    console.error("Błąd pobierania statystyk", error);
+  }
+}
+
+// \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+// VIII. START - INCJALIZACJA - automatyczne uruchomienie pobierania lotów i usług po otwarciu strony
 // \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
 async function incjalizuj() {
   await pobierzloty();
   await pobierzUslugi();
+  await pobierzStatystyki();
 }
 
 window.onload = incjalizuj;
 
 // \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-// VIII. WYLOGOWYWANIE
+// IX. WYLOGOWYWANIE
 // \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
 function wyloguj() {
