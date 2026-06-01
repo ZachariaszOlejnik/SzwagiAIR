@@ -1,25 +1,10 @@
 """
 ============================================================
- auth_utils.py - NARZĘDZIA AUTORYZACJI JWT
+ auth_utils.py - JWT
 ============================================================
  
-Centralne miejsce dla logiki tokenów JWT:
-  - tworzenie tokenu po zalogowaniu
-  - weryfikacja tokenu (dependency get_current_user)
-  - sprawdzanie roli admina (dependency wymagaj_admina)
+Tu znajduje się logika JWT oraz hashowanie bcrypt.
  
-Jak używać w routerach:
-  from auth_utils import pobierz_aktualnego_uzytkownika, wymagaj_admina
- 
-  @router.post("/cos")
-  def dodaj(..., user = Depends(pobierz_aktualnego_uzytkownika)):
-      ...
- 
-JWT (JSON Web Token) działa tak:
-  1. Po zalogowaniu serwer tworzy podpisany token zawierający login + rolę.
-  2. Klient (Swagger/frontend) wysyła token w nagłówku: Authorization: Bearer <token>
-  3. Serwer weryfikuje podpis tokenu - jeśli OK, wie kto wysłał request.
-  Token jest podpisany SECRET_KEY - nikt bez klucza nie podrobi ważnego tokenu.
 ============================================================
 """
  
@@ -27,15 +12,35 @@ from datetime import datetime, timedelta, timezone
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
+from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 from database import get_session
 import models
  
+
+# ============================================================
+# HASHOWANIE HASEŁ (bcrypt)
+# ============================================================
+# CryptContext zarządza algorytmem hashowania. schemes=["bcrypt"] = używamy bcrypt.
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+ 
+ 
+def hashuj_haslo(haslo: str) -> str:
+    """Zwraca hash z podanego hasła do zapisania w bazie."""
+    return pwd_context.hash(haslo)
+ 
+ 
+def sprawdz_haslo(haslo_jawne: str, haslo_hash: str) -> bool:
+    """
+    Sprawdza czy podane hasło jest takie samo jak w bazie.
+    Zwraca True/False. Nie odszyfrowuje tylko hashuje i porównuje.
+    """
+    return pwd_context.verify(haslo_jawne, haslo_hash)
+
 # ============================================================
 # KONFIGURACJA JWT
 # ============================================================
 # SECRET_KEY - klucz do podpisywania tokenów.
-# UWAGA: na produkcji trzymać w zmiennej środowiskowej (.env), nie w kodzie!
 SECRET_KEY = "szwagiair-tajny-klucz-zmienic-na-produkcji-1234567890"
 ALGORITHM = "HS256"               # algorytm podpisu
 TOKEN_WAZNY_MINUT = 60 * 24       # token ważny 24 godziny
@@ -71,13 +76,9 @@ def pobierz_aktualnego_uzytkownika(
     db: Session = Depends(get_session),
 ):
     """
-    Dependency: wyciąga token z nagłówka, weryfikuje go i zwraca obiekt konta.
+    Dependency: wyciąga token z nagłówka, weryfikuje go i zwraca .
     Jeśli token jest nieprawidłowy/wygasły - rzuca 401.
  
-    Używać tak:
-        @router.post("/cos")
-        def f(..., user = Depends(pobierz_aktualnego_uzytkownika)):
-            # user to obiekt models.KontoUzytkownika
     """
     wyjatek_401 = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,

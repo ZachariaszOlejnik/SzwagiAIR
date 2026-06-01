@@ -122,7 +122,7 @@ class KontoUzytkownikaBase(BaseModel):
     rola_systemowa: str = Field(..., max_length=20)
 
 class KontoUzytkownikaCreate(KontoUzytkownikaBase):
-    pass
+    haslo: str = Field(..., min_length=6, max_length=100)
 
 class KontoUzytkownikaResponse(KontoUzytkownikaBase):
     id: int

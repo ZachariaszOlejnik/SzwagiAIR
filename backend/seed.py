@@ -30,6 +30,7 @@ import random
 from sqlalchemy import text
 from database import SessionLocal
 import models
+from auth_utils import hashuj_haslo
 
 
 # ============================================================
@@ -275,7 +276,7 @@ def dodaj_pasazerow(db):
 
 
 def dodaj_konta(db, pasazer_ids):
-    """Tworzy konta logowania dla pasażerów. Hasło: demo123 (plaintext - MVP)."""
+    """Tworzy konta logowania dla pasażerów."""
     print("Dodaję konta użytkowników...")
     # Wszyscy pasażerowie dostają konto z loginem = email
     pasazerowie = db.query(models.Pasazer).all()
@@ -283,16 +284,16 @@ def dodaj_konta(db, pasazer_ids):
         konto = models.KontoUzytkownika(
             id_pasazera=p.id,
             login=p.email,
-            haslo_hash="demo123",
+            haslo_hash=hashuj_haslo("demo123"),
             rola_systemowa="pasazer",
         )
         db.add(konto)
 
-    # dodatkowo jedno konto administratora (powiązane z ostatnim pasażerem "Jan Demo")
+    # dodatkowo jedno konto administratora 
     admin = models.KontoUzytkownika(
         id_pasazera=pasazerowie[-1].id,
         login="admin@szwagiair.pl",
-        haslo_hash="admin123",
+        haslo_hash=hashuj_haslo("admin123"),
         rola_systemowa="admin",
     )
     db.add(admin)
