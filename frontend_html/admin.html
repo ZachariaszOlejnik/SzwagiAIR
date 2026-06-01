@@ -166,7 +166,9 @@
             <h2>Katalog Usług</h2>
             <p>Zarządzaj cennikiem usług dodatkowych</p>
           </div>
-          <button class="btn-akcja">+ Dodaj usługę</button>
+          <button class="btn-akcja" ondblclick="otworzModalUslugi()">
+            + Dodaj usługę
+          </button>
         </div>
 
         <table>
@@ -238,6 +240,42 @@
               Anuluj
             </button>
             <button type="submit" class="btn-zapisz">Zapisz lot</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- MODAL DLA USŁUG -->
+    <div id="modal-usluga" class="modal-tlo ukryty">
+      <div class="modal-okno">
+        <h3>🏷️ Dodaj nową usługę</h3>
+
+        <form id="formularz-uslugi" onsubmit="dodajUsluge(event)">
+          <div class="form-grupa">
+            <label>Nazwa usługi (np. Kawa)</label>
+            <input type="text" id="nowa-nazwa-uslugi" required />
+          </div>
+
+          <div class="form-grupa">
+            <label>Cena standardowa (PLN)</label>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              id="nowa-cena-uslugi"
+              required
+            />
+          </div>
+
+          <div class="modal-przyciski">
+            <button
+              type="button"
+              class="btn-anuluj"
+              onclick="zamknijModalUslugi()"
+            >
+              Anuluj
+            </button>
+            <button type="submit" class="btn-zapisz">Zapisz usługę</button>
           </div>
         </form>
       </div>
