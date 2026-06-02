@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SzwagiAIR - Płatność</title>
+    <link rel="stylesheet" href="css/rezerwacja.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h2>💳 Opłać rezerwację</h2>
+
+      <section class="karta" id="platnoscInfo">
+        <p>Ładowanie danych rezerwacji...</p>
+      </section>
+
+      <section class="karta">
+        <h3>Metoda płatności</h3>
+        <div class="form-group">
+          <select
+            id="metodaPlatnosci"
+            style="width: 100%; padding: 10px; font-size: 16px"
+          >
+            <option value="blik">BLIK</option>
+            <option value="karta">Karta płatnicza</option>
+            <option value="przelew">Przelew bankowy</option>
+          </select>
+        </div>
+        <br />
+        <button
+          class="btn-rezerwuj"
+          id="oplacBtn"
+          style="background-color: #28a745"
+        >
+          Zapłać teraz
+        </button>
+        <div id="komunikat" style="margin-top: 15px; font-weight: bold"></div>
+      </section>
+    </div>
+
+    <script src="js/platnosc.js"></script>
+  </body>
+</html>
