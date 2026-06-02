@@ -12,9 +12,43 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        padding-top: 50px;
+        padding-top: 30px;
         margin: 0;
       }
+      /* pasek z przyciskiem wstecz/wyloguj */
+      .pasek-gorny {
+        width: 400px;
+        max-width: 90%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+      }
+      .powrot {
+        color: #003366;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: bold;
+      }
+      .powrot:hover {
+        text-decoration: underline;
+      }
+      .btn-wyloguj {
+        background: none;
+        border: 1px solid #c0392b;
+        color: #c0392b;
+        padding: 6px 12px;
+        border-radius: 4px;
+        font-size: 13px;
+        cursor: pointer;
+        width: auto;
+        margin-top: 0;
+      }
+      .btn-wyloguj:hover {
+        background: #c0392b;
+        color: white;
+      }
+ 
       .search-container {
         background-color: white;
         padding: 40px;
@@ -44,6 +78,9 @@
         border: 1px solid #ccc;
         border-radius: 4px;
         box-sizing: border-box;
+      }
+      /* tylko pola kodów IATA wymuszają wielkie litery */
+      .form-group input.kod-iata {
         text-transform: uppercase;
       }
       button {
@@ -63,7 +100,6 @@
       #wyniki {
         width: 400px;
       }
-      /* styl dla pojedynczego lotu */
       .lot-karta {
         background-color: white;
         padding: 15px;
@@ -103,25 +139,48 @@
     </style>
   </head>
   <body>
+    <div class="pasek-gorny">
+      <a href="index.html" class="powrot">← Powrót do logowania</a>
+      <button class="btn-wyloguj" onclick="wyloguj()">🚪 Wyloguj</button>
+    </div>
+ 
     <div class="search-container">
       <h2>Znajdź swój lot</h2>
       <form id="searchForm">
         <div class="form-group">
           <label for="skad">Skąd (Kod lotniska, np. WAW)</label>
-          <input type="text" id="skad" placeholder="Opcjonalne..." maxlength="3" />
+          <input type="text" id="skad" class="kod-iata" placeholder="Opcjonalne..." maxlength="3" />
         </div>
         <div class="form-group">
           <label for="dokad">Dokąd (Kod lotniska, np. JFK)</label>
-          <input type="text" id="dokad" placeholder="Opcjonalnie..." maxlength="3" />
+          <input type="text" id="dokad" class="kod-iata" placeholder="Opcjonalnie..." maxlength="3" />
+        </div>
+        <div class="form-group">
+          <label for="dataLotu">Data wylotu (opcjonalnie)</label>
+          <input type="date" id="dataLotu" />
         </div>
         <button type="submit">Szukaj lotów</button>
       </form>
     </div>
  
     <div id="wyniki"></div>
-    
+ 
     <script>
       const API = "http://127.0.0.1:8000";
+
+      // zablokowanie dat z przeszłości
+      window.onload = function() {
+        const dzisiaj = new Date().toISOString().split("T")[0];
+        document.getElementById("dataLotu").setAttribute("min", dzisiaj);
+      };
+ 
+      // wylogowanie - czyści sesję i wraca do logowania
+      function wyloguj() {
+        if (confirm("Czy na pewno chcesz się wylogować?")) {
+          localStorage.clear();
+          window.location.href = "index.html";
+        }
+      }
  
       document
         .getElementById("searchForm")
@@ -133,7 +192,6 @@
             '<p style="text-align:center;">Szukam najciekawszych kierunków...</p>';
  
           try {
-            // pobieramy standardowe loty i lotniska równolegle
             const [lotyResp, lotniskaResp] = await Promise.all([
               fetch(`${API}/operacje/loty`),
               fetch(`${API}/operacje/lotniska`),
@@ -141,7 +199,6 @@
             const loty = await lotyResp.json();
             const lotniska = await lotniskaResp.json();
  
-            // mapa ID -> obiekt lotniska (do zamiany ID na kod IATA i miasto)
             const mapaLotnisk = {};
             lotniska.forEach((l) => {
               mapaLotnisk[l.id] = l;
@@ -151,31 +208,44 @@
             let htmlWynikow = "";
             let znaleziono = 0;
  
-            // filtry - wpisujemy KODY IATA (WAW, JFK)
+            // FILTRY: kody IATA + data
             const skadFiltr = document.getElementById("skad").value.toUpperCase().trim();
             const dokadFiltr = document.getElementById("dokad").value.toUpperCase().trim();
+            const dataFiltr = document.getElementById("dataLotu").value; // format: "2026-06-03" lub ""
  
             // ==========================================
-            // 1. WYSZUKIWANIE LOTÓW BEZPOŚREDNICH
+            // 1. LOTY BEZPOŚREDNIE
             // ==========================================
             if (loty.length > 0) {
               loty.forEach((lot) => {
                 const wylot = mapaLotnisk[lot.id_lotniska_wylotu];
                 const przylot = mapaLotnisk[lot.id_lotniska_przylotu];
-  
                 if (!wylot || !przylot) return;
-  
+
+                // filt pomijanie lotów z przeszłości
+                const teraz = new Date();
+                const dataWylotu = new Date(lot.czas_wylotu);
+                if (dataWylotu < teraz) return; // jeśli lot wystartował - omijamy go
+ 
                 const pasujeSkad = skadFiltr === "" || wylot.kod === skadFiltr;
                 const pasujeDokad = dokadFiltr === "" || przylot.kod === dokadFiltr;
-  
-                if (pasujeSkad && pasujeDokad) {
+ 
+                // FILTR DATY: porównujemy YYYY-MM-DD lotu z wybraną datą
+                let pasujeData = true;
+                if (dataFiltr !== "") {
+                  // wyciągamy datę z czasu wylotu (np. "2026-06-03T08:00:00" -> "2026-06-03")
+                  const dataLotu = new Date(lot.czas_wylotu).toISOString().split("T")[0];
+                  pasujeData = (dataLotu === dataFiltr);
+                }
+ 
+                if (pasujeSkad && pasujeDokad && pasujeData) {
                   const wylotData = new Date(lot.czas_wylotu).toLocaleString("pl-PL", {
                     day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit",
                   });
                   const przylotData = new Date(lot.czas_przylotu).toLocaleString("pl-PL", {
                     day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit",
                   });
-  
+ 
                   htmlWynikow += `
                     <div class="lot-karta">
                       <strong>Lot bezpośredni: ${lot.numer_lotu}</strong>
@@ -197,54 +267,62 @@
                 }
               });
             }
-
+ 
             // ==========================================
-            // 2. WYSZUKIWANIE LOTÓW Z PRZESIADKAMI (API)
+            // 2. LOTY Z PRZESIADKAMI
             // ==========================================
-            // Odpytujemy API o przesiadki tylko, jeśli użytkownik podał oba kody
             if (skadFiltr !== "" && dokadFiltr !== "") {
-                const przesiadkiResp = await fetch(`${API}/operacje/loty/przesiadki?skad=${skadFiltr}&dokad=${dokadFiltr}`);
-                
-                if (przesiadkiResp.ok) {
-                    const przesiadki = await przesiadkiResp.json();
-                    
-                    przesiadki.forEach(p => {
-                        const wylotData = new Date(p.czas_wylotu_pierwszego).toLocaleString("pl-PL", {
-                            day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit"
-                        });
-                        const przylotData = new Date(p.czas_przylotu_na_miejsce).toLocaleString("pl-PL", {
-                            day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit"
-                        });
+              const przesiadkiResp = await fetch(`${API}/operacje/loty/przesiadki?skad=${skadFiltr}&dokad=${dokadFiltr}`);
+ 
+              if (przesiadkiResp.ok) {
+                const przesiadki = await przesiadkiResp.json();
+ 
+                przesiadki.forEach((p) => {
+                  // FILTR: POMIJANIE LOTÓW Z PRZESZŁOŚCI
+                  const teraz = new Date();
+                  const dataWylotuPierwszego = new Date(p.czas_wylotu_pierwszego);
+                  if (dataWylotuPierwszego < teraz) return;
 
-                        htmlWynikow += `
-                          <div class="lot-karta" style="border-left-color: #e67e22;">
-                            <strong>Lot z przesiadką</strong>
-                            <div class="trasa">
-                              ${p.lotnisko_start} → ${p.lotnisko_przesiadki} → ${p.lotnisko_cel}
-                            </div>
-                            <div class="czasy">
-                              Odcinek 1: ${p.pierwszy_lot}<br>
-                              Odcinek 2: ${p.drugi_lot}<br><br>
-                              Wylot: ${wylotData}<br>
-                              Przylot do celu: ${przylotData}
-                            </div>
-                            <button class="btn-wybierz" onclick="alert('Aby zarezerwować to połączenie, musisz zarezerwować oba odcinki lotu (Moduł podwójnych rezerwacji w budowie).')">
-                              Sprawdź przesiadkę →
-                            </button>
-                          </div>
-                        `;
-                        znaleziono++;
-                    });
-                }
+                  // filtr daty dla przesiadek - pierwszy lot
+                  if (dataFiltr !== "") {
+                    const dataLotu = new Date(p.czas_wylotu_pierwszego).toISOString().split("T")[0];
+                    if (dataLotu !== dataFiltr) return;
+                  }
+ 
+                  const wylotData = new Date(p.czas_wylotu_pierwszego).toLocaleString("pl-PL", {
+                    day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit",
+                  });
+                  const przylotData = new Date(p.czas_przylotu_na_miejsce).toLocaleString("pl-PL", {
+                    day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit",
+                  });
+ 
+                  htmlWynikow += `
+                    <div class="lot-karta" style="border-left-color: #e67e22;">
+                      <strong>Lot z przesiadką</strong>
+                      <div class="trasa">
+                        ${p.lotnisko_start} → ${p.lotnisko_przesiadki} → ${p.lotnisko_cel}
+                      </div>
+                      <div class="czasy">
+                        Odcinek 1: ${p.pierwszy_lot}<br>
+                        Odcinek 2: ${p.drugi_lot}<br><br>
+                        Wylot: ${wylotData}<br>
+                        Przylot do celu: ${przylotData}
+                      </div>
+                      <button class="btn-wybierz" onclick="alert('Aby zarezerwować to połączenie, musisz zarezerwować oba odcinki lotu (Moduł podwójnych rezerwacji w budowie).')">
+                        Sprawdź przesiadkę →
+                      </button>
+                    </div>
+                  `;
+                  znaleziono++;
+                });
+              }
             }
-
-            // Renderowanie wyników na ekranie
+ 
             if (znaleziono === 0) {
               wynikDiv.innerHTML = '<p style="text-align:center;">Brak lotów dla podanych kryteriów.</p>';
             } else {
               wynikDiv.innerHTML = htmlWynikow;
             }
-
           } catch (error) {
             wynikDiv.innerHTML =
               '<p style="text-align:center; color:red;">Błąd połączenia z serwerem. Uvicorn działa?</p>';
@@ -263,7 +341,5 @@
         window.location.href = `rezerwacja.html?lot_id=${idLotu}`;
       }
     </script>
- 
-    
   </body>
 </html>
