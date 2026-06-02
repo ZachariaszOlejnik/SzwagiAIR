@@ -92,7 +92,10 @@ def dodaj_samolot(
     # return db.query(models.Loty).all()
 
 @router.get("/loty")
-def pobierz_loty(db: Session = Depends(get_session)):
+def pobierz_loty(
+    limit: int = 50, #limit - ile pobrać
+    offset: int = 0, #offset - ile rekordów pominąć na początku 
+    db: Session = Depends(get_session)):
     """[RAW SQL] Zwraca listę wszystkich lotów w bazie + nazwy samolotów i kody lotnisk"""
 
     zapytanie = text("""
@@ -107,10 +110,20 @@ def pobierz_loty(db: Session = Depends(get_session)):
         JOIN samoloty s ON l.id_samolotu = s.id
         JOIN lotniska wylot ON l.id_lotniska_wylotu = wylot.id
         JOIN lotniska przylot ON l.id_lotniska_przylotu = przylot.id
+        WHERE l.czas_wylotu >= NOW()
         ORDER BY l.czas_wylotu
+        LIMIT :limit
+        OFFSET :offset
     """)
 
-    wyniki = db.execute(zapytanie).mappings().all()
+    # LIMIT i OFFSET też w zapytaniu!
+    wyniki = db.execute(
+        zapytanie,
+        {
+            "limit": limit,
+            "offset": offset
+        }
+    ).mappings().all()
     return wyniki
 
 
