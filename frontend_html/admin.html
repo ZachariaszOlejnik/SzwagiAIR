@@ -16,6 +16,7 @@
       </button>
       <button onclick="zmienWidok('zaloga')">👨‍✈️ Zarządzanie załogą</button>
       <button onclick="zmienWidok('katalog')">🏷️ Katalog usług</button>
+      <button onclick="zmienWidok('raporty')">📈 Raporty (Top 10)</button>
       <br /><br />
       <button style="background-color: #c0392b" onclick="wyloguj()">
         🚪 Wyloguj
@@ -190,6 +191,33 @@
               <td>2</td>
               <td>Strefa VIP Lounge</td>
               <td>280.00</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+      <section id="raporty" class="ukryty">
+        <div class="header-top">
+          <div>
+            <h2>Raporty Systemowe</h2>
+            <p>Najlepsi klienci (Top 10) na podstawie opłaconych rezerwacji</p>
+          </div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Pozycja</th>
+              <th>Imię i Nazwisko</th>
+              <th>Email</th>
+              <th>Ilość rezerwacji</th>
+              <th>Suma wydatków</th>
+            </tr>
+          </thead>
+          <tbody id="tabela-raporty">
+            <tr>
+              <td colspan="5" style="text-align: center; padding: 20px">
+                Ładowanie danych raportu...
+              </td>
             </tr>
           </tbody>
         </table>

@@ -140,6 +140,7 @@ function zmienWidok(idWidoku) {
   document.getElementById("dashboard").classList.add("ukryty");
   document.getElementById("zaloga").classList.add("ukryty");
   document.getElementById("katalog").classList.add("ukryty");
+  document.getElementById("raporty").classList.add("ukryty");
 
   // wybrana klasa jest pokazana
   document.getElementById(idWidoku).classList.remove("ukryty");
@@ -483,6 +484,7 @@ async function incjalizuj() {
   await pobierzloty();
   await pobierzUslugi();
   await pobierzStatystyki();
+  await pobierzRaporty();
 }
 
 window.onload = incjalizuj;
@@ -502,5 +504,45 @@ function wyloguj() {
 
     // przekierowanie na stronę główną:
     window.location.href = "index.html";
+  }
+}
+
+// \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+// X. RAPORTY (TOP 10 PASAŻERÓW)
+// \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+async function pobierzRaporty() {
+  try {
+    const odp = await fetch("http://127.0.0.1:8000/sprzedaz/raporty/top-pasazerowie?limit=10");
+    const pasazerowie = await odp.json();
+    const tabela = document.getElementById("tabela-raporty");
+
+    tabela.innerHTML = ""; // Czyszczenie napisu ładowania
+
+    pasazerowie.forEach((p, index) => {
+      // Wymuszamy 2 miejsca po przecinku dla estetyki waluty
+      const wydatki = parseFloat(p.suma_wydatkow).toLocaleString("pl-PL", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+
+      tabela.innerHTML += `
+      <tr>
+        <td><strong>#${index + 1}</strong></td>
+        <td>${p.imie} ${p.nazwisko}</td>
+        <td>${p.email}</td>
+        <td>${p.liczba_rezerwacji}</td>
+        <td style="color: #2ecc71;"><strong>${wydatki} PLN</strong></td>
+      </tr>
+      `;
+    });
+  } catch (error) {
+    console.error("Błąd pobierania raportów:", error);
+    document.getElementById("tabela-raporty").innerHTML = `
+      <tr>
+        <td colspan="5" style="text-align:center; color:red;">
+          Wystąpił błąd podczas pobierania raportu.
+        </td>
+      </tr>
+    `;
   }
 }
