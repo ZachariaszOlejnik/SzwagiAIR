@@ -229,12 +229,23 @@ def dodaj_odcinek_rezerwacji(
 # ==========================================
 # --- PŁATNOŚCI (Z LOGIKĄ BIZNESOWĄ) ---
 # ==========================================
- 
-@router.get("/platnosci", response_model=list[schemas.PlatnoscResponse])
+# WERSJA ORM:
+# @router.get("/platnosci", response_model=list[schemas.PlatnoscResponse])
+# def pobierz_platnosci(db: Session = Depends(get_session)):
+#     return db.query(models.Platnosc).all()
+
+@router.get("/platnosci")
 def pobierz_platnosci(db: Session = Depends(get_session)):
-    """Zwraca listę wszystkich zarejestrowanych płatności."""
-    return db.query(models.Platnosc).all()
- 
+    """[RAW SQL] Zwraca listę wszystkich zarejestrowanych płatności."""
+    
+    zapytanie = text("""
+        SELECT id, id_rezerwacji, kwota, data_platnosci, metoda_platnosci, status_transakcji
+        FROM platnosci
+        ORDER BY data_platnosci DESC
+    """)
+    return db.execute(zapytanie).mappings().all()
+
+
 @router.post("/platnosci", response_model=schemas.PlatnoscResponse)
 def zrealizuj_platnosc(
     platnosc: schemas.PlatnoscCreate,
@@ -276,11 +287,22 @@ def zrealizuj_platnosc(
 # ==========================================
 # --- BAGAŻE ---
 # ==========================================
- 
-@router.get("/bagaze", response_model=list[schemas.BagazResponse])
+# WERSJA ORM:
+# @router.get("/bagaze", response_model=list[schemas.BagazResponse])
+# def pobierz_bagaze(db: Session = Depends(get_session)):
+#     return db.query(models.Bagaz).all()
+
+@router.get("/bagaze")
 def pobierz_bagaze(db: Session = Depends(get_session)):
-    """Zwraca listę wszystkich zarejestrowanych bagaży."""
-    return db.query(models.Bagaz).all()
+    """[RAW SQL] Zwraca listę wszystkich zarejestrowanych bagaży."""
+
+    zapytanie = text("""
+        SELECT id, id_rezerwacji, typ, cena
+        FROM bagaze
+        ORDER BY id
+    """)
+    return db.execute(zapytanie).mappings().all()
+
  
 @router.post("/bagaze", response_model=schemas.BagazResponse)
 def dodaj_bagaz(
@@ -454,3 +476,4 @@ def raport_przychody_miesieczne(rok: int = 2026, db: Session = Depends(get_sessi
  
     wyniki = db.execute(zapytanie, {"rok": rok}).mappings().all()
     return wyniki
+
