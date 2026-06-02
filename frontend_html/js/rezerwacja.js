@@ -218,10 +218,9 @@ async function utworzRezerwacje() {
 
     // ------------------ DODAJĘ IF'a awaryjnego- Mateusz ---------------
     if (!rezerwacjaResp.ok) {
-      document.get;
-      getElementById;
-      "komunikat".innerHTML = "Błąd: Nie udało się połączyć z bazą!";
-      return; // żeby od razu zatrzymac funkcję i przejść do kroku 2
+      document.getElementById("komunikat").innerHTML =
+        "Błąd: Nie udało się połączyć z bazą!";
+      return; // żeby od razu zatrzymac funkcję - nie przejdzie do kroku 2
     }
 
     const rezerwacja = await rezerwacjaResp.json();
