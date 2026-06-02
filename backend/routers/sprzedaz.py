@@ -310,10 +310,26 @@ def dodaj_bagaz(
 # --- KATALOG USŁUG (Cennik) ---
 # ==========================================
  
-@router.get("/katalog_uslug", response_model=list[schemas.KatalogUslugResponse])
+#  WERSJA ORM:
+# @router.get("/katalog_uslug", response_model=list[schemas.KatalogUslugResponse])
+# def pobierz_katalog_uslug(db: Session = Depends(get_session)):
+#     return db.query(models.KatalogUslug).all()
+
+@router.get("/katalog_uslug")
 def pobierz_katalog_uslug(db: Session = Depends(get_session)):
-    """Zwraca cennik wszystkich dostępnych usług dodatkowych (np. catering, wybór miejsca)."""
-    return db.query(models.KatalogUslug).all()
+    """[RAW SQL] Zwraca cennik wszystkich dostępnych usług dodatkowych (np. catering, wybór miejsca)."""
+
+    zapytanie = text("""
+        SELECT id, nazwa_uslugi, cena_standardowa
+        FROM katalog_uslug
+        ORDER BY id
+    """)
+
+    wyniki = db.execute(zapytanie).mappings().all()
+    return wyniki
+
+
+
  
 @router.post("/katalog_uslug", response_model=schemas.KatalogUslugResponse)
 def dodaj_usluge_do_katalogu(

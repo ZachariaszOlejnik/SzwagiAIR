@@ -86,7 +86,7 @@ def dodaj_samolot(
  
 # --- LOTY --- (RAW dla GET i ORM dla POST)
 
-    # WERSJA ORM:
+# WERSJA ORM:
 # @router.get("/loty", response_model = list[schemas.LotResponse])
 # def pobierz_loty(db: Session = Depends(get_session)):
     # return db.query(models.Loty).all()
@@ -115,7 +115,6 @@ def pobierz_loty(db: Session = Depends(get_session)):
 
 
 
-
 @router.post("/loty", response_model=schemas.LotResponse)
 def dodaj_lot(
     lot: schemas.LotCreate,
@@ -131,11 +130,25 @@ def dodaj_lot(
     return nowy_lot
  
  
-# --- PRACOWNICY ---
-@router.get("/pracownicy", response_model = list[schemas.PracownikResponse])
+# --- PRACOWNICY --- (RAW dla GET i ORM dla POST)
+
+# WERSJA ORM:
+# @router.get("/pracownicy", response_model = list[schemas.PracownikResponse])
+# def pobierz_pracownikow(db: Session = Depends(get_session)):
+#     return db.query(models.Pracownik).all()
+
+@router.get("/pracownicy")
 def pobierz_pracownikow(db: Session = Depends(get_session)):
-    """Zwraca listę wszystkich pracownków w bazie."""
-    return db.query(models.Pracownik).all()
+    """[RAW SQL] Zwraca listę wszystkich pracownków w bazie."""
+
+    zapytanie = text("""
+        SELECT id, imie, nazwisko, stanowisko, numer_licencji
+        FROM pracownicy
+        ORDER BY nazwisko 
+    """)
+
+    wyniki = db.execute(zapytanie).mappings().all()
+    return wyniki
  
 @router.post("/pracownicy", response_model=schemas.PracownikResponse)
 def dodaj_pracownika(
