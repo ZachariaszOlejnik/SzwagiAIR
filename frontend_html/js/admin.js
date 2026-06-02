@@ -185,6 +185,12 @@ async function dodajLot(event) {
       },
       body: JSON.stringify(daneLotu),
     });
+    if (odpowiedz.ok) {
+      zamknijModal();
+      pobierzloty();
+    } else {
+      alert("Błąd: Sprawdź czy wpisane ID lotnisk i samolotu instnieją!");
+    }
   } catch (error) {
     console.error("Błąd sieci:", error);
     alert("❌ Błąd połączenia z serwerem.");

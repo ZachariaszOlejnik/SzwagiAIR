@@ -17,13 +17,25 @@ router = APIRouter(
 # - POST/DELETE (zmiany w siatce lotów, flocie, załodze) -> tylko ADMIN
 #   realizowane przez Depends(wymagaj_admina) na końcu listy parametrów
  
+
  
-# --- LOTNISKA ---
+# --- LOTNISKA --- (RAW dla GET i ORM dla POST)
 @router.get("/lotniska", response_model = list[schemas.LotniskoResponse])
 def pobierz_lotniska(db: Session = Depends(get_session)):
-    """Zwraca listę wszystkich lotnisk w bazie."""
-    return db.query(models.Lotnisko).all()
- 
+    """[RAW SQL] Zwraca listę wszystkich lotnisk w bazie."""
+
+    # return db.query(models.Lotnisko).all() - wersja ORM - jedna linijka by wystarczyła
+    zapytanie = text("""
+        SELECT id, kod, miasto, kraj
+        FROM lotniska
+        ORDER BY kod
+    """)
+
+    # mappings() zamienia wynik zapytania SQL na słowniki {kolumna: wartość}, potem fastAPI konwertuje do JSON
+    wyniki = db.execute(zapytanie).mappings().all()
+    return wyniki
+
+
 @router.post("/lotniska", response_model=schemas.LotniskoResponse)
 def dodaj_lotnisko(
     lotnisko: schemas.LotniskoCreate,
@@ -39,12 +51,24 @@ def dodaj_lotnisko(
     return nowe_lotnisko
  
  
-# --- SAMOLOTY ---
+# --- SAMOLOTY --- (RAW dla GET i ORM dla POST)
 @router.get("/samoloty", response_model = list[schemas.SamolotResponse])
 def pobierz_samoloty(db: Session = Depends(get_session)):
-    """Zwraca listę wszystkich samolotów w bazie."""
-    return db.query(models.Samolot).all()
+    """[RAW SQL] Zwraca listę wszystkich samolotów w bazie."""
+    
+    # return db.query(models.Samolot).all() - wersja ORM jednoliniowa
+    zapytanie = text("""
+        SELECT id, model, pojemnosc_max
+        FROM samoloty
+        ORDER BY id
+    """)
+
+    wyniki = db.execute(zapytanie).mappings().all()
+    return wyniki
+    
  
+
+
 @router.post("/samoloty", response_model=schemas.SamolotResponse)
 def dodaj_samolot(
     samolot: schemas.SamolotCreate,
@@ -60,12 +84,38 @@ def dodaj_samolot(
     return nowy_samolot
  
  
-# --- LOTY ---
-@router.get("/loty", response_model = list[schemas.LotResponse])
+# --- LOTY --- (RAW dla GET i ORM dla POST)
+
+    # WERSJA ORM:
+# @router.get("/loty", response_model = list[schemas.LotResponse])
+# def pobierz_loty(db: Session = Depends(get_session)):
+    # return db.query(models.Loty).all()
+
+@router.get("/loty")
 def pobierz_loty(db: Session = Depends(get_session)):
-    """Zwraca listę wszystkich lotów w bazie."""
-    return db.query(models.Loty).all()
- 
+    """[RAW SQL] Zwraca listę wszystkich lotów w bazie + nazwy samolotów i kody lotnisk"""
+
+    zapytanie = text("""
+        SELECT
+            l.id, l.numer_lotu, l.czas_wylotu, l.czas_przylotu, l.cena_bazowa, l.wolne_miejsca, l.id_samolotu,
+            s.model AS model_samolotu,
+            l.id_lotniska_wylotu,
+            wylot.kod AS kod_wylotu,
+            l.id_lotniska_przylotu,
+            przylot.kod AS kod_przylotu
+        FROM loty l
+        JOIN samoloty s ON l.id_samolotu = s.id
+        JOIN lotniska wylot ON l.id_lotniska_wylotu = wylot.id
+        JOIN lotniska przylot ON l.id_lotniska_przylotu = przylot.id
+        ORDER BY l.czas_wylotu
+    """)
+
+    wyniki = db.execute(zapytanie).mappings().all()
+    return wyniki
+
+
+
+
 @router.post("/loty", response_model=schemas.LotResponse)
 def dodaj_lot(
     lot: schemas.LotCreate,
@@ -101,7 +151,7 @@ def dodaj_pracownika(
     return nowy_pracownik
  
  
-# --- HARMONOGRAM ZAŁOGI ---
+# --- HARMONOGRAM ZAŁOGI --- 
 @router.get("/harmonogram", response_model = list[schemas.HarmonogramZalogiResponse])
 def pobierz_harmonogram(db: Session = Depends(get_session)):
     """Zwraca listę wszystkich wpisów w harmonogramie załogi."""
@@ -120,7 +170,7 @@ def dodaj_wpis_harmonogramu(
     db.refresh(nowy_wpis)
     return nowy_wpis
  
- 
+
 @router.delete("/harmonogram")
 def usun_wpis_harmonogramu(
     id_lotu: int,

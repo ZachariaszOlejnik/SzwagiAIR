@@ -24,10 +24,30 @@ router = APIRouter(
 # --- PASAŻEROWIE ---
 # ==========================================
  
-@router.get("/pasazerowie", response_model=list[schemas.PasazerResponse])
+#  WERSJA ORM:
+# @router.get("/pasazerowie", response_model=list[schemas.PasazerResponse])
+# def pobierz_pasazerow(db: Session = Depends(get_session)):
+    # return db.query(models.Pasazer).all()
+
+@router.get("/pasazerowie")
 def pobierz_pasazerow(db: Session = Depends(get_session)):
-    """Zwraca listę wszystkich pasażerów."""
-    return db.query(models.Pasazer).all()
+    """[RAW SQL] Zwraca listę wszystkich pasażerów + ich rola"""
+
+    zapytanie = text("""
+        SELECT
+            p.id, p.imie, p.nazwisko, p.email, p.telefon,
+            ku.rola_systemowa
+        FROM pasazerowie p
+        LEFT JOIN konta_uzytkownikow ku ON ku.id_pasazera = p.id
+        ORDER BY p.id
+    """)
+
+    wyniki = db.execute(zapytanie).mappings().all()
+    return wyniki
+
+
+
+
  
 @router.get("/pasazerowie/{id_pasazera}", response_model=schemas.PasazerResponse)
 def pobierz_pasazera(id_pasazera: int, db: Session = Depends(get_session)):
@@ -60,10 +80,29 @@ def dodaj_pasazera(
 # --- REZERWACJE ---
 # ==========================================
  
-@router.get("/rezerwacje", response_model=list[schemas.RezerwacjaResponse])
+# WERSJA ORM:
+# @router.get("/rezerwacje", response_model=list[schemas.RezerwacjaResponse])
+# def pobierz_rezerwacje(db: Session = Depends(get_session)):
+#     return db.query(models.Rezerwacja).all()
+
+@router.get("/rezerwacje")
 def pobierz_rezerwacje(db: Session = Depends(get_session)):
-    """Zwraca listę wszystkich rezerwacji w systemie."""
-    return db.query(models.Rezerwacja).all()
+    """[RAW SQL] Zwraca listę wszystkich rezerwacji w systemie."""
+
+    zapytanie = text("""
+        SELECT
+            r.id, r.data_rezerwacji, r.typ_podrozy, r.cena_calkowita, r.status, r.id_pasazera,
+            p.imie AS pasezer_imie, p.nazwisko as pasazer_nazwisko, p.email AS pasazer_email
+        FROM rezerwacje r
+        JOIN pasazerowie p ON r.id_pasazera = p.id
+        ORDER BY r.data_rezerwacji DESC
+    """)
+
+    wyniki = db.execute(zapytanie).mappings().all()
+    return wyniki
+
+
+
  
 @router.get("/rezerwacje/{id_rezerwacji}", response_model=schemas.RezerwacjaResponse)
 def pobierz_rezerwacje_po_id(id_rezerwacji: int, db: Session = Depends(get_session)):
@@ -122,11 +161,27 @@ def anuluj_rezerwacje(
 # ==========================================
 # --- ODCINKI REZERWACJI (Bilety) ---
 # ==========================================
- 
-@router.get("/odcinki_rezerwacji", response_model=list[schemas.OdcinekRezerwacjiResponse])
+#  WERSJA ORM:
+# @router.get("/odcinki_rezerwacji", response_model=list[schemas.OdcinekRezerwacjiResponse])
+# def pobierz_odcinki_rezerwacji(db: Session = Depends(get_session)):
+#     return db.query(models.OdcinekRezerwacji).all()
+
+@router.get("/odcinki_rezerwacji")
 def pobierz_odcinki_rezerwacji(db: Session = Depends(get_session)):
-    """Zwraca listę wszystkich odcinków przypisanych do rezerwacji."""
-    return db.query(models.OdcinekRezerwacji).all()
+    """[RAW SQL] Zwraca listę wszystkich odcinków przypisanych do rezerwacji."""
+
+    zapytanie = text("""
+        SELECT 
+            o.id, o.id_rezerwacji, o.id_lotu, o.kolejnosc, o.numer_miejsca,
+            l.numer_lotu, l.cena_bazowa
+        FROM odcinki_rezerwacji o
+        JOIN loty l ON o.id_lotu = l.id
+        ORDER BY o.id_rezerwacji, o.kolejnosc
+    """)
+
+    wyniki = db.execute(zapytanie).mappings().all()
+    return wyniki
+
  
 @router.post("/odcinki_rezerwacji", response_model=schemas.OdcinekRezerwacjiResponse)
 def dodaj_odcinek_rezerwacji(
@@ -277,12 +332,28 @@ def dodaj_usluge_do_katalogu(
 # ==========================================
 # --- USŁUGI W REZERWACJI ---
 # ==========================================
+#  WERSJA ORM:
+# @router.get("/uslugi_rezerwacji", response_model=list[schemas.UslugaRezerwacjiResponse])
+# def pobierz_uslugi_rezerwacji(db: Session = Depends(get_session)):
+#     return db.query(models.UslugaRezerwacji).all()
  
-@router.get("/uslugi_rezerwacji", response_model=list[schemas.UslugaRezerwacjiResponse])
+@router.get("/uslugi_rezerwacji")
 def pobierz_uslugi_rezerwacji(db: Session = Depends(get_session)):
-    """Zwraca listę wszystkich usług dokupionych do rezerwacji."""
-    return db.query(models.UslugaRezerwacji).all()
- 
+    """[RAW SQL] Zwraca listę wszystkich usług dokupionych do rezerwacji."""
+
+    zapytanie = text("""
+        SELECT
+            ur.id, ur.id_rezerwacji, ur.id_uslugi,
+            ku.nazwa_uslugi, ku.cena_standardowa
+        FROM uslugi_rezerwacji ur
+        JOIN katalog_uslug ku ON ur.id_uslugi = ku.id
+        ORDER BY ur.id_rezerwacji        
+    """)
+
+    wyniki = db.execute(zapytanie).mappings().all()
+    return wyniki
+
+
 @router.post("/uslugi_rezerwacji", response_model=schemas.UslugaRezerwacjiResponse)
 def dodaj_usluge_do_rezerwacji(
     usluga: schemas.UslugaRezerwacjiCreate,
