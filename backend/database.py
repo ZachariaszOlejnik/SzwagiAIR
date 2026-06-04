@@ -4,7 +4,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 # Adres
-database_url = "postgresql://szwagi:password123@localhost:5432/szwagiair_db"
+database_url = "postgresql://szwagi:password123@db:5432/szwagiair_db"
 
 engine = create_engine(database_url)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

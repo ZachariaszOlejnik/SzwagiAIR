@@ -1,0 +1,41 @@
+version: "3.8"
+
+services:
+  db:
+    image: postgres:15
+    container_name: szawagiair_postgres
+    environment:
+      POSTGRES_USER: szwagi
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: szwagiair_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build: ./backend
+    container_name: szawagiair_backend
+    restart: always
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+
+  frontend:
+    build: ./frontend_html
+    container_name: szawagiair_frontend
+    ports:
+      - 5500:80
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+
+# URUCHAMINIE NOWE:
+# docker-compose up --build
+
+# docker-compose restart backend
+
+# docker exec -it szawagiair_backend python seed.py
