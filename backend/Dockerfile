@@ -11,5 +11,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 # kopiowanie reszty backendu
 COPY . .
 
-# odpalenie serwera uvicorn na porcie 8000
+# odpalenie serwera uvicorn na porcie 8000, a 0.0.0.0 to nasłuchiwanie na wszystkich portach
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

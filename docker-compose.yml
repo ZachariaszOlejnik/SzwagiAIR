@@ -9,27 +9,30 @@ services:
       POSTGRES_PASSWORD: password123
       POSTGRES_DB: szwagiair_db
     ports:
-      - "5432:5432"
+      - "5432:5432" #port komputera : port w kontenerze
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data # zapisywanie danych na dysku
 
+  #BACKEND (FastAPI)
   backend:
     build: ./backend
     container_name: szawagiair_backend
-    restart: always
+    restart: always # bo wyrzucało nam błędy kiedy baza jeszcze nie wstała
     ports:
-      - "8000:8000"
+      - "8000:8000" #Port API
     depends_on:
-      - db
+      - db # najpierw odpalenie bazy
 
+  #FRONEND (HTML/JS)
   frontend:
     build: ./frontend_html
     container_name: szawagiair_frontend
     ports:
-      - 5500:80
+      - 5500:80 # na 5500 wczesniej mieliśmy live serwer, a 80 to domyślny port dla nginx
     depends_on:
-      - backend
+      - backend # frontend uruchamia się po backendzie
 
+# wirtualny dysk dla bazy
 volumes:
   postgres_data:
 
@@ -47,3 +50,6 @@ volumes:
 
 # docker-compose logs backend   #czytanie błędów
 
+# ADRESY:
+# http://127.0.0.1:8000/docs
+# http://localhost:5500/
