@@ -34,8 +34,16 @@ volumes:
   postgres_data:
 
 # URUCHAMINIE NOWE:
-# docker-compose up --build
 
-# docker-compose restart backend
+# docker-compose up -d     # zwykłe szybkie uruchomienie, d-detatched, czyli kontenery działają w tle, a terminal umożna używać
 
-# docker exec -it szawagiair_backend python seed.py
+# docker-compose up --build     #twardy restart po zmianie kodu
+
+# docker-compose down      # wyłączanie
+
+# docker exec -it szawagiair_backend python seed.py    #wstrzykiwanie danych początkowych
+
+# docker ps   # sprawdzenie czy wszytsko działa
+
+# docker-compose logs backend   #czytanie błędów
+
