@@ -3,7 +3,7 @@ version: "3.8"
 services:
   db:
     image: postgres:15
-    container_name: szawagiair_postgres
+    container_name: szwagiair_postgres
     environment:
       POSTGRES_USER: szwagi
       POSTGRES_PASSWORD: password123
@@ -16,7 +16,7 @@ services:
   #BACKEND (FastAPI)
   backend:
     build: ./backend
-    container_name: szawagiair_backend
+    container_name: szwagiair_backend
     restart: always # bo wyrzucało nam błędy kiedy baza jeszcze nie wstała
     ports:
       - "8000:8000" #Port API
@@ -26,7 +26,7 @@ services:
   #FRONEND (HTML/JS)
   frontend:
     build: ./frontend_html
-    container_name: szawagiair_frontend
+    container_name: szwagiair_frontend
     ports:
       - 5500:80 # na 5500 wczesniej mieliśmy live serwer, a 80 to domyślny port dla nginx
     depends_on:
@@ -44,7 +44,7 @@ volumes:
 
 # docker-compose down      # wyłączanie
 
-# docker exec -it szawagiair_backend python seed.py    #wstrzykiwanie danych początkowych
+# docker exec -it szwagiair_backend python seed.py    #wstrzykiwanie danych początkowych
 
 # docker ps   # sprawdzenie czy wszytsko działa
 
