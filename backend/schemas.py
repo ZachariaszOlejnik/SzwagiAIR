@@ -16,18 +16,18 @@ from typing import Literal
 #################################
 ## 1. Lotnisko ##################
 #################################
-class LotniskoBase(BaseModel):
+class LotniskoBase(BaseModel): # 3. Klasa "Base": Przechowuje wspólne pola dla danej encji. (walidacja danych -> poprawne to obiekt models.Lotnisko)
     kod: str = Field(..., min_length=3, max_length=3, description="Trzyliterowy kod IATA lotniska, np. WAW")
     miasto: str = Field(..., max_length=50)
     kraj: str = Field(..., max_length=50)
 
-class LotniskoCreate(LotniskoBase):
+class LotniskoCreate(LotniskoBase): # 4. Klasa "Create": Używana przy POST. Nie ma pola ID (bo ID nadaje baza automatycznie przy zapisie).
     pass
 
-class Lotnisko(LotniskoBase):
+class Lotnisko(LotniskoBase): 
     id: int
-
-class LotniskoResponse(Lotnisko):
+ 
+class LotniskoResponse(Lotnisko): # 5. Klasa "Response": Używana przy GET. Zawiera ID oraz "from_attributes=True"
     model_config = ConfigDict(from_attributes=True)
 
 

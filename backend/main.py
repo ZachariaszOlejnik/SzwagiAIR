@@ -4,11 +4,11 @@ from database import engine, Base
 from fastapi.middleware.cors import CORSMiddleware # połączenie z frontendem (CORS)
 
 # Import routerów z folderu routers/
-from routers.operacje import router as operacje_router # moduł operacji na danych (CRUD) - dodawanie, edycja, usuwanie, pobieranie danych z bazy
-from routers.sprzedaz import router as sprzedaz_router # moduł sprzedaży biletów
-from routers.autoryzacja import router as autoryzacja_router # logowanie
+from routers.operacje import router as operacje_router # moduł operacji na danych (CRUD) - dodawanie, edycja, usuwanie, pobieranie danych z bazy: lotniska, samoloty, siatka lotów
+from routers.sprzedaz import router as sprzedaz_router # moduł sprzedaży biletów : rezerwacje, płatności, koszyk, raporty
+from routers.autoryzacja import router as autoryzacja_router # logowanie i wystawianie tokenów JWT
 
-import models  #import potrzebny, żeby SQLAlchemy "zobaczył" modele
+import models  #import potrzebny, żeby SQLAlchemy "zobaczył" modele - żeby wiedział że nasze 13 tabel istnieje zanim je spróbujemy utworzyć
  
 
 # Tworzymy tabele w bazie przy starcie aplikacji.
