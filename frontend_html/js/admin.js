@@ -499,8 +499,8 @@ function wyloguj() {
   );
 
   if (czyNapewno) {
-    // localStorage.removeItem("token");
-    // sessionStorage.clear();
+    localStorage.removeItem("token");
+    sessionStorage.clear();
 
     // przekierowanie na stronę główną:
     window.location.href = "index.html";
@@ -512,7 +512,9 @@ function wyloguj() {
 // \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 async function pobierzRaporty() {
   try {
-    const odp = await fetch("http://127.0.0.1:8000/sprzedaz/raporty/top-pasazerowie?limit=10");
+    const odp = await fetch(
+      "http://127.0.0.1:8000/sprzedaz/raporty/top-pasazerowie?limit=10",
+    );
     const pasazerowie = await odp.json();
     const tabela = document.getElementById("tabela-raporty");
 
