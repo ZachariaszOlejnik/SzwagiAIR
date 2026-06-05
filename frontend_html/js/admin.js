@@ -499,8 +499,12 @@ function wyloguj() {
   );
 
   if (czyNapewno) {
-    localStorage.removeItem("token");
+    localStorage.clear();
     sessionStorage.clear();
+
+    localStorage.removeItem("token");
+    localStorage.removeItem("rola");
+    localStorage.removeItem("email");
 
     // przekierowanie na stronę główną:
     window.location.href = "index.html";
