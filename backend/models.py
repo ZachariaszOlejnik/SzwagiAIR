@@ -4,6 +4,10 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import Integer, String, ForeignKey, DateTime, Numeric
 from database import Base
 
+#Definiuje strukturę 13 tabel jako klasy Pythona. SQLAlchemy automatcznie tworzy na ich podstawie polecenie CRREATE TABLE przy starcie aplikacji. 
+# Każda klasa reprezentuje jedną tabelę, a jej atrybuty odpowiadają kolumnom w tej tabeli. 
+# Dodatkowo, relacje między tabelami są definiowane za pomocą kluczy obcych i funkcji relationship(), co umożliwia łatwe nawigowanie między powiązanymi danymi.
+
 class Lotnisko(Base):
     __tablename__ = "lotniska"
 
