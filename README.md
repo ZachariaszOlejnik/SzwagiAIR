@@ -18,9 +18,12 @@ URUCHAMIANIE:
 git clone https://github.com/ZachariaszOlejnik/SzwagiAIR.git
 
 # Krok 2: Konfiguracja zmiennych środowiskowych
-uzupełnij plim .env swoimi danycmi (hasło do bazy i sekretny klucz JWT)
+W głównym folderze projektu znajduje się plik `.env.template`.
+Skopiuj go i zmień nazwę na **`.env`**
 
-# Krok 3: Uruchomienie kontenerów
+Uzupełnij plik .env swoimi danycmi (hasło do bazy i sekretny klucz JWT)
+
+# Krok 3: Uruchomienie kontenerów za pomocą Dockera
 docker-compose up --build
 
 🌐 Dostęp do aplikacji:
