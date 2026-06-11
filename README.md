@@ -17,3 +17,16 @@ URUCHAMIANIE:
 # Krok 1: Git clone
 git clone https://github.com/ZachariaszOlejnik/SzwagiAIR.git
 
+# Krok 2: Konfiguracja zmiennych środowiskowych
+uzupełnij plim .env swoimi danycmi (hasło do bazy i sekretny klucz JWT)
+
+# Krok 3: Uruchomienie kontenerów
+docker-compose up --build
+
+🌐 Dostęp do aplikacji:
+* Frontend (Apliakcja pasażera/admina): http://localhost:5500/
+* Backend (dokumentacja automatyczna w Swagger UI): http://localhost:8000/docs
+* Baza danych (PostgreSQL): localhost:5432 (docker jako db:5432)
+
+👨‍💻 Autorzy:
+* Mateusz i Zachariasz
