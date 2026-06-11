@@ -3,8 +3,17 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
+
+# IMPORT DLA DOTENV:
+import os
+
 # Adres
-database_url = "postgresql://szwagi:password123@db:5432/szwagiair_db"
+database_url = os.getenv("DATABASE_URL")
+
+
+
+
+
 
 engine = create_engine(database_url)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

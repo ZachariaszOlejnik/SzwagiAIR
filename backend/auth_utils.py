@@ -18,6 +18,16 @@ from database import get_session
 import models
  
 
+# IMPORT DLA DOTENV
+import os
+
+SECRET_KEY = os.getenv("SECRET_KEY")
+
+
+
+
+
+
 # ============================================================
 # HASHOWANIE HASEŁ (bcrypt)
 # ============================================================
@@ -41,7 +51,7 @@ def sprawdz_haslo(haslo_jawne: str, haslo_hash: str) -> bool:
 # KONFIGURACJA JWT
 # ============================================================
 # SECRET_KEY - klucz do podpisywania tokenów.
-SECRET_KEY = "szwagiair-tajny-klucz-zmienic-na-produkcji-1234567890"
+# SECRET_KEY = "szwagiair-tajny-klucz-zmienic-na-produkcji-1234567890"  stare - teraz memy dotenv
 ALGORITHM = "HS256"               # algorytm podpisu
 TOKEN_WAZNY_MINUT = 60 * 24       # token ważny 24 godziny
  

@@ -1,3 +1,14 @@
+# IMPORT DLA DOTENV (muszą być wczesnmiej niż importy engine i sessionlocal):
+# teraz dam 'from dotenv import load_dotenv', a w kolejnych plkiach juz używamy tylko 'import os'
+from dotenv import load_dotenv
+
+# 1. Ładowanie zmiennych z pliku .env do pamieci systemu
+load_dotenv()
+
+
+
+
+
 from fastapi import FastAPI
 from database import engine, Base
 
@@ -10,6 +21,7 @@ from routers.autoryzacja import router as autoryzacja_router # logowanie i wysta
 
 import models  #import potrzebny, żeby SQLAlchemy "zobaczył" modele - żeby wiedział że nasze 13 tabel istnieje zanim je spróbujemy utworzyć
  
+
 
 # Tworzymy tabele w bazie przy starcie aplikacji.
 # My nie używamy Alembica, więc create_all() generuje tabele za nas.

@@ -5,9 +5,9 @@ services:
     image: postgres:15
     container_name: szwagiair_postgres
     environment:
-      POSTGRES_USER: szwagi
-      POSTGRES_PASSWORD: password123
-      POSTGRES_DB: szwagiair_db
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "5432:5432" #port komputera : port w kontenerze
     volumes:
@@ -20,6 +20,8 @@ services:
     restart: always # bo wyrzucało nam błędy kiedy baza jeszcze nie wstała
     ports:
       - "8000:8000" #Port API
+    env_file:
+      - .env #  Linijka była potrzebna żeby docker widział env
     depends_on:
       - db # najpierw odpalenie bazy
 
